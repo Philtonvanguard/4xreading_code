@@ -56,7 +56,8 @@ module.exports = {
   showVictory, gameOver, PHILOSOPHERS, CITIES, EVENTS, QUIZ,
   ui, applyEffect, closeOverlay, showMap, showTitle,
   triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES,
-  TOTAL_CONNECTIONS, DIFFICULTIES, chooseDifficulty
+  TOTAL_CONNECTIONS, DIFFICULTIES, chooseDifficulty,
+  CITY_BY_ID, DEFAULT_ROUTE, DETOUR, currentLeg
 };
 `;
 const mod = { exports: {} };
@@ -84,9 +85,15 @@ assert(game.G.cityIndex === 0, "starts in Chang'an");
 const rng = (() => { let s = 42; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; })();
 Math.random = rng;
 
-for (let cityIdx = 0; cityIdx < game.CITIES.length; cityIdx++) {
-  const c = game.CITIES[cityIdx];
-  assert(game.G.cityIndex === cityIdx, "at city " + c.name);
+function clickByText(sub) {
+  const i = choices().findIndex(b => b.textContent.includes(sub));
+  if (i < 0) throw new Error("no choice containing '" + sub + "' in [" + choices().map(b => b.textContent).join(" | ") + "]");
+  clickChoice(i);
+}
+
+let guardCities = 0;
+while (guardCities++ < 15) {
+  const c = game.CITY_BY_ID[game.G.route[game.G.cityIndex]];
 
   // talk to each philosopher
   for (const pid of c.philosophers) {
@@ -96,30 +103,36 @@ for (let cityIdx = 0; cityIdx < game.CITIES.length; cityIdx++) {
     while (game.mode === "DIALOGUE" && guard++ < 30) clickChoice(0);
     assert(game.G.met[pid], "met " + pid);
   }
+  if (c.id === "rome") break;
 
   // market: buy food & water & sell scroll
-  if (c.id !== "rome") {
-    game.showMarket();
-    clickChoice(0); // food
-    clickChoice(1); // water
-    clickChoice(3); // sell scroll
-    assert(game.G.soldAt[c.id], "sold scroll at " + c.name);
+  game.showMarket();
+  clickChoice(0); // food
+  clickChoice(1); // water
+  clickChoice(3); // sell scroll
+  assert(game.G.soldAt[c.id], "sold scroll at " + c.name);
 
-    // travel the leg
-    game.startTravel();
-    let days = 0;
-    while (game.G.cityIndex === cityIdx && days++ < 200) {
-      if (game.mode === "EVENT") {
-        clickChoice(0);          // resolve event
-        if (game.mode === "GAMEOVER") throw new Error("died in event at " + c.name);
-        if (game.G.cityIndex === cityIdx) clickChoice(0); // continue on
-      }
-      if (game.mode === "TRAVEL") game.travelDayTick();
-      if (game.mode === "GAMEOVER") throw new Error("died on leg from " + c.name + " day " + game.G.day + " h" + game.G.health);
+  // set out via the city menu (taking the southern detour at Kashgar)
+  game.cityMenu();
+  if (c.id === game.DETOUR.from) clickByText("southern detour");
+  else clickByText("Set out");
+  assert(game.mode === "TRAVEL", "traveling from " + c.name);
+
+  // travel the leg
+  const startIdx = game.G.cityIndex;
+  let days = 0;
+  while (game.G.cityIndex === startIdx && days++ < 250) {
+    if (game.mode === "EVENT") {
+      clickChoice(0);          // resolve event
+      if (game.mode === "GAMEOVER") throw new Error("died in event at " + c.name);
+      if (game.G.cityIndex === startIdx) clickChoice(0); // continue on
     }
-    assert(game.G.cityIndex === cityIdx + 1, "arrived past " + c.name);
+    if (game.mode === "TRAVEL") game.travelDayTick();
+    if (game.mode === "GAMEOVER") throw new Error("died on leg from " + c.name + " day " + game.G.day + " h" + game.G.health);
   }
+  assert(game.G.cityIndex === startIdx + 1, "arrived past " + c.name);
 }
+assert(game.G.route.includes("taxila"), "route includes the Taxila detour");
 
 assert(game.G.scrolls.length === game.TOTAL_CONNECTIONS,
   "collected all " + game.TOTAL_CONNECTIONS + " scrolls, got " + game.G.scrolls.length);
@@ -186,8 +199,25 @@ if (game.mode !== "TRAVEL") game.startTravel();
 game.travelDayTick();
 assert(swiftDist > game.G.legDist - d1, "swift pace covers more ground than easy");
 
+// ---- the northern route skips Taxila ----
+game.newGame();
+game.G.cityIndex = game.DEFAULT_ROUTE.indexOf("kashgar");
+game.cityMenu();
+clickByText("Set out");
+assert(!game.G.route.includes("taxila"), "northern route skips Taxila");
+assert(game.currentLeg().dist === game.CITY_BY_ID.kashgar.distToNext, "northern leg uses default distance");
+// detour from a fresh game splices the route and overrides the leg
+game.newGame();
+game.G.cityIndex = game.DEFAULT_ROUTE.indexOf("kashgar");
+game.cityMenu();
+clickByText("southern detour");
+assert(game.G.route[game.G.cityIndex + 1] === "taxila", "detour inserts Taxila next");
+assert(game.currentLeg().dist === game.DETOUR.leg.dist, "detour leg uses override distance");
+game.cityMenu(); // back at the menu, detour already chosen: no second offer
+assert(!ui.choices.children.some(b => b.textContent.includes("southern detour")), "detour offered only once");
+
 // ---- difficulty levels ----
-assert(game.TOTAL_CONNECTIONS === 15, "15 philosophers in the world");
+assert(game.TOTAL_CONNECTIONS === 17, "17 philosophers in the world");
 for (const key of Object.keys(game.DIFFICULTIES)) {
   const d = game.DIFFICULTIES[key];
   game.newGame(key);

@@ -41,6 +41,8 @@ function newGame(diffKey) {
   G = Object.assign({}, START_STATE, diff.start, {
     cityIndex: 0,
     legDist: 0,
+    route: DEFAULT_ROUTE.slice(),
+    legOverrides: {},
     pace: "steady",
     eventChance: diff.eventChance,
     priceMul: diff.priceMul,
@@ -127,8 +129,12 @@ function addChoice(label, fn, cls) {
   return b;
 }
 
-function city() { return CITIES[G.cityIndex]; }
-function nextCity() { return CITIES[G.cityIndex + 1]; }
+function city() { return CITY_BY_ID[G.route[G.cityIndex]]; }
+function nextCity() { return CITY_BY_ID[G.route[G.cityIndex + 1]]; }
+function currentLeg() {
+  return G.legOverrides[G.cityIndex] ||
+    { dist: city().distToNext, terrain: city().terrainToNext };
+}
 
 function updateStats() {
   if (!G) return;
@@ -174,10 +180,12 @@ function showTitle() {
   );
   clearChoices();
   const save = loadSave();
-  if (save && CITIES[save.cityIndex]) {
-    addChoice("⟲  Continue your journey — Day " + save.day + ", near " + CITIES[save.cityIndex].name, () => {
-      // older saves may predate difficulty settings
-      G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {} }, save);
+  const saveCity = save && CITY_BY_ID[(save.route || DEFAULT_ROUTE)[save.cityIndex]];
+  if (saveCity) {
+    addChoice("⟲  Continue your journey — Day " + save.day + ", near " + saveCity.name, () => {
+      // older saves may predate difficulty settings and branching routes
+      G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {},
+                          route: DEFAULT_ROUTE.slice(), legOverrides: {} }, save);
       if (G.legDist > 0) { updateStats(); pauseTravel(); }
       else arriveAtCity(false);
     });
@@ -245,8 +253,19 @@ function cityMenu() {
   });
   if (c.id === "rome") {
     if (G.met["senator"]) addChoice("★  Conclude your journey", showVictory);
-  } else {
+  } else if (c.id === DETOUR.from && !G.route.includes(DETOUR.via)) {
+    const via = CITY_BY_ID[DETOUR.via];
     addChoice("⟶  Set out for " + nextCity().name + "  (" + c.distToNext + " km of " + c.terrainToNext + ")",
+      startTravel);
+    addChoice("⛰  Take the southern detour to " + via.name + "  (" + DETOUR.leg.dist + " km of " + DETOUR.leg.terrain + " — longer road, more minds)",
+      () => {
+        G.route.splice(G.cityIndex + 1, 0, DETOUR.via);
+        G.legOverrides[G.cityIndex] = DETOUR.leg;
+        startTravel();
+      });
+  } else {
+    const leg = currentLeg();
+    addChoice("⟶  Set out for " + nextCity().name + "  (" + leg.dist + " km of " + leg.terrain + ")",
       startTravel);
   }
 }
@@ -400,10 +419,10 @@ function travelChoices() {
 }
 
 function travelText(extra) {
-  const c = city(), n = nextCity();
-  const remaining = Math.max(0, c.distToNext - Math.floor(G.legDist));
+  const c = city(), n = nextCity(), leg = currentLeg();
+  const remaining = Math.max(0, leg.dist - Math.floor(G.legDist));
   setText("On the road: " + c.name + "  ⟶  " + n.name +
-    "\nTerrain: " + c.terrainToNext + "   ·   " + remaining + " km remaining   ·   pace: " + G.pace +
+    "\nTerrain: " + leg.terrain + "   ·   " + remaining + " km remaining   ·   pace: " + G.pace +
     (extra ? "\n\n" + extra : ""));
 }
 
@@ -420,19 +439,19 @@ function pauseTravel() {
 }
 
 function travelDayTick() {
-  const c = city();
+  const leg = currentLeg();
   const pace = PACES[G.pace] || PACES.steady;
-  const speed = Math.round((150 + Math.min(G.camels, 4) * 20 + (c.terrainToNext === "sea" ? 120 : 0)) * pace.speedMul);
+  const speed = Math.round((150 + Math.min(G.camels, 4) * 20 + (leg.terrain === "sea" ? 120 : 0)) * pace.speedMul);
   G.legDist += speed;
   G.day += 1;
   G.health = Math.min(100, G.health + pace.health);
   G.food = Math.max(0, G.food - 1);
-  const thirst = c.terrainToNext === "desert" ? 2 : 1;
-  G.water = Math.max(0, G.water - (c.terrainToNext === "sea" ? 0 : thirst));
+  const thirst = leg.terrain === "desert" ? 2 : 1;
+  G.water = Math.max(0, G.water - (leg.terrain === "sea" ? 0 : thirst));
 
   let starving = "";
   if (G.food <= 0) { G.health -= 8; starving = "You are out of food. "; }
-  if (G.water <= 0 && c.terrainToNext !== "sea") { G.health -= 10; starving += "Your waterskins are empty. "; }
+  if (G.water <= 0 && leg.terrain !== "sea") { G.health -= 10; starving += "Your waterskins are empty. "; }
   updateStats();
 
   if (G.health <= 0) {
@@ -443,7 +462,7 @@ function travelDayTick() {
   else if (Math.random() < 0.06) travelText(flavorLine());
   else travelText();
 
-  if (G.legDist >= c.distToNext) {
+  if (G.legDist >= leg.dist) {
     G.cityIndex++;
     arriveAtCity(false);
     return;
@@ -496,7 +515,7 @@ function flavorLine() {
 }
 
 function triggerEvent() {
-  const terr = city().terrainToNext;
+  const terr = currentLeg().terrain;
   const pool = EVENTS.filter(e => e.terrain.includes("any") || e.terrain.includes(terr));
   const total = pool.reduce((s, e) => s + e.weight, 0);
   let roll = Math.random() * total;
@@ -646,13 +665,13 @@ function render(t) {
     case "TRAVEL": case "CAMP": case "EVENT": {
       const dayPhase = ["day", "day", "dusk", "night", "dawn"][G.day % 5];
       const offset = mode === "TRAVEL" ? (frame * 0.9) : (frame * 0.05);
-      drawTravelScene(ctx, city().terrainToNext, dayPhase, offset,
+      drawTravelScene(ctx, currentLeg().terrain, dayPhase, offset,
         mode === "TRAVEL" ? animFrame : 0, G.camels, G.cityIndex * 13 + 5);
       break;
     }
     case "MAP": {
-      const fracDone = G && city().distToNext ? Math.min(1, G.legDist / city().distToNext) : 0;
-      drawMapScene(ctx, G ? G.cityIndex : 0, fracDone);
+      const fracDone = G && currentLeg().dist ? Math.min(1, G.legDist / currentLeg().dist) : 0;
+      drawMapScene(ctx, G ? G.route : DEFAULT_ROUTE, G ? G.cityIndex : 0, fracDone);
       break;
     }
     case "CODEX": {

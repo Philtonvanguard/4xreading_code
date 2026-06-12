@@ -205,6 +205,7 @@ function drawCityScene(ctx, city, seed) {
     changan:  { wall: "#9a3b35", roof: "#3a3a4a", pagoda: true },
     dunhuang: { wall: "#c9a878", roof: "#8a6635", pagoda: false },
     kashgar:  { wall: "#c9b08a", roof: "#9a8055", pagoda: false },
+    taxila:   { wall: "#d4b88a", roof: "#7a5fa0", pagoda: false },
     samarkand:{ wall: "#b09acb", roof: "#5a4a8a", pagoda: false },
     merv:     { wall: "#d9c8a0", roof: "#8a8a98", pagoda: false },
     ctesiphon:{ wall: "#c9b08a", roof: "#6b5a3a", pagoda: false },
@@ -224,8 +225,8 @@ function drawCityScene(ctx, city, seed) {
     if (st.pagoda) {
       px(ctx, bx - 3, by - 4, bw + 6, 4, st.roof);
       px(ctx, bx + 3, by - 10, bw - 6, 4, st.roof);
-    } else if (city.id === "samarkand" || city.id === "ctesiphon") {
-      drawMound(ctx, bx, by + 2, bw, 10, st.roof); // domes
+    } else if (city.id === "samarkand" || city.id === "ctesiphon" || city.id === "taxila") {
+      drawMound(ctx, bx, by + 2, bw, 10, st.roof); // domes & stupas
     } else if (city.id === "rome" || city.id === "antioch" || city.id === "palmyra") {
       drawTriangle(ctx, bx - 2, by + 2, bw + 4, 8, st.roof); // pediments
       // columns
@@ -319,12 +320,20 @@ function drawDialogueScene(ctx, city, spec, seed) {
 
 // --- Route map -----------------------------------------------
 
-const MAP_POINTS = [
-  [292, 70], [262, 60], [235, 68], [205, 58], [178, 70],
-  [148, 80], [118, 72], [95, 62], [38, 78]
-]; // east (Chang'an) → west (Rome), drawn right-to-left
+const MAP_POINTS = {
+  changan:   [292, 70],
+  dunhuang:  [262, 60],
+  kashgar:   [235, 68],
+  taxila:    [222, 96],
+  samarkand: [205, 58],
+  merv:      [178, 70],
+  ctesiphon: [148, 80],
+  palmyra:   [118, 72],
+  antioch:   [95, 62],
+  rome:      [38, 78]
+}; // east (Chang'an) right, west (Rome) left
 
-function drawMapScene(ctx, cityIndex, traveledFrac) {
+function drawMapScene(ctx, route, cityIndex, traveledFrac) {
   drawSkyGradient(ctx, SKY.night);
   drawStars(ctx, 5);
   px(ctx, 0, 0, 320, 180, "rgba(20,16,10,0.6)");
@@ -334,9 +343,9 @@ function drawMapScene(ctx, cityIndex, traveledFrac) {
   ctx.font = "10px monospace";
   ctx.fillText("THE SILK ROAD  ·  CHANG'AN TO ROME", 60, 36);
 
-  // route line
-  for (let i = 0; i < MAP_POINTS.length - 1; i++) {
-    const [x1, y1] = MAP_POINTS[i], [x2, y2] = MAP_POINTS[i + 1];
+  // route line along the chosen route
+  for (let i = 0; i < route.length - 1; i++) {
+    const [x1, y1] = MAP_POINTS[route[i]], [x2, y2] = MAP_POINTS[route[i + 1]];
     const steps = 14;
     const done = i < cityIndex;
     const partial = i === cityIndex ? traveledFrac : 0;
@@ -348,17 +357,23 @@ function drawMapScene(ctx, cityIndex, traveledFrac) {
       px(ctx, cx, cy, 2, 2, lit ? "#a03020" : "#b0a080");
     }
   }
-  // city dots + names
+  // every city in the world appears; off-route ones are faint
   ctx.font = "8px monospace";
-  CITIES.forEach((c, i) => {
-    const [mx, my] = MAP_POINTS[i];
-    px(ctx, mx - 2, my + 58, 5, 5, i <= cityIndex ? "#a03020" : "#6b5a3a");
-    ctx.fillStyle = i === cityIndex ? "#a03020" : "#6b5a3a";
-    ctx.fillText(c.name, Math.min(mx - 10, 270), my + (i % 2 ? 72 : 52));
+  CITIES.forEach(c => {
+    const [mx, my] = MAP_POINTS[c.id];
+    const ri = route.indexOf(c.id);
+    const onRoute = ri >= 0;
+    const visited = onRoute && ri <= cityIndex;
+    const col = visited ? "#a03020" : (onRoute ? "#6b5a3a" : "#b8a988");
+    px(ctx, mx - 2, my + 58, 5, 5, col);
+    ctx.fillStyle = ri === cityIndex ? "#a03020" : col;
+    const yOff = c.id === "taxila" ? 72 : ((CITIES.indexOf(c) % 2) ? 72 : 52);
+    ctx.fillText(c.name, Math.min(mx - 10, 270), my + yOff);
   });
   // caravan marker
-  const [x1, y1] = MAP_POINTS[Math.min(cityIndex, 8)];
-  const [x2, y2] = MAP_POINTS[Math.min(cityIndex + 1, 8)];
+  const last = route.length - 1;
+  const [x1, y1] = MAP_POINTS[route[Math.min(cityIndex, last)]];
+  const [x2, y2] = MAP_POINTS[route[Math.min(cityIndex + 1, last)]];
   const mx = Math.round(x1 + (x2 - x1) * traveledFrac);
   const my = Math.round(y1 + (y2 - y1) * traveledFrac) + 60;
   px(ctx, mx - 2, my - 6, 6, 4, "#7a5fa0");

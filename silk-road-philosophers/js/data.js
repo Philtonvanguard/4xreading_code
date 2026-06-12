@@ -37,6 +37,17 @@ const CITIES = [
     philosophers: ["sogdian"]
   },
   {
+    id: "taxila",
+    name: "Taxila",
+    region: "Gandhara — the southern detour",
+    optional: true,
+    terrainToNext: "steppe",
+    distToNext: 1500,
+    intro: "The university city of the East. Greek colonnades shade Sanskrit debates; Persian scribes copy Indian mathematics. Students come here from three worlds, and the teachers take all comers.",
+    sky: "day",
+    philosophers: ["jain", "grammarian"]
+  },
+  {
     id: "samarkand",
     name: "Samarkand",
     region: "Sogdiana",
@@ -235,6 +246,72 @@ const PHILOSOPHERS = {
       title: "Universal Love and Parallel Logic",
       text: "Mozi (c. 470–391 BCE) taught jian'ai — impartial concern for all — centuries before Stoic cosmopolitanism preached the same widening of the moral circle in Greece. His school also developed China's first formal logic, optics, and geometry, uncannily parallel to the Greeks they never met. Mohism faded under the Han, but its questions — why should care stop at borders? — kept traveling without it.",
       route: "Chang'an ↔ Athens (a road never taken)"
+    }
+  },
+
+  jain: {
+    name: "Sudharman",
+    title: "Jain muni of the southern road",
+    portrait: { skin: "#c98850", robe: "#f0ead8", hat: "bald", beard: "none" },
+    nodes: [
+      {
+        text: "Watch your step, friend — there are ants on this path, and I have swept it only once today. We Jains hold ahimsa above all: harm no living thing, in deed, in word, even in thought. But sit; I want to tell you about an elephant. Six blind men were asked to describe one. What do you suppose happened?",
+        choices: [
+          { label: "Each described the part he touched — a snake, a fan, a wall, a rope…", insight: 3,
+            reply: "Just so! The trunk-holder swore it was a snake, the ear-holder a fan, the leg-holder a pillar — and each was right, and each was wrong. We call the lesson anekantavada: truth has many sides, and every doctrine grasps one limb. Including, I cheerfully admit, ours." },
+          { label: "The one who touched the most parts won the argument.", insight: 2,
+            reply: "Ha — a merchant's scoring! But no one wins; that is the point. Each held one limb and called it the whole. Our teachers therefore hedge every claim with 'in some respect...' — maddening in debate, but it has kept us from burning anyone's library." },
+          { label: "Blind men shouldn't describe elephants.", insight: 1,
+            reply: "And yet they must, friend — for about the deepest things, we are all the blind men. The error is not in touching one part; it is in declaring the trunk a fraud because you are holding the tail." }
+        ]
+      },
+      {
+        text: "You travel armed, I see — most do. We muni carry nothing that can harm, eat nothing that costs a life it need not cost, and walk rather than ride lest the beast suffer. Travelers laugh at us. Tell me honestly: is refusing all harm strength, or weakness?",
+        choices: [
+          { label: "Strength — it is the harder discipline by far.", insight: 3,
+            reply: "So we believe. Any frightened man can strike; it takes training to absorb anger and return none of it. Mark this teaching, traveler — it walks slowly, but it walks far. One day, I think, it will move men who command no armies to stop empires that do." },
+          { label: "Weakness dressed in principle.", insight: 2,
+            reply: "Then test it: which is easier for you — to answer an insult with a blow, or with stillness? You flinch toward the blow; all men do. The rarer power is the other one. We are not weak, friend. We are unarmed on purpose, which is different." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Elephant in Every Language",
+      text: "The parable of the blind men and the elephant comes from India — told in Jain, Buddhist and Hindu texts to teach that every doctrine grasps part of the truth. It traveled the trade routes for centuries, surfacing in Sufi poetry (Rumi retold it in Persia) and eventually in nearly every language on earth. And ahimsa kept walking too: Gandhi drew on it, Tolstoy corresponded about it, and Martin Luther King Jr. studied Gandhi — a 2,000-year relay of non-harm.",
+      route: "India → Persia → everywhere"
+    }
+  },
+
+  grammarian: {
+    name: "Chandra",
+    title: "grammarian of the school of Panini",
+    portrait: { skin: "#c98850", robe: "#8a4a4a", hat: "wrap", beard: "#222222" },
+    nodes: [
+      {
+        text: "You arrive during a duel! Not with swords — with suffixes. In Taxila we settle grammar like others settle bloodfeuds. Our master Panini caught the whole Sanskrit language in about four thousand rules — feed them a root, and they generate every correct form, like a loom weaving cloth. Tell me: what kind of thing is a language, that mere rules can capture it?",
+        choices: [
+          { label: "A lawful system — order hiding under what seems like habit.", insight: 3,
+            reply: "Yes! Men think they speak by whim, but the whim has architecture. Panini found it: rules calling rules, exceptions ranked above generalities, the whole machine compact enough to memorize. We may be the only people who recite their grammar like scripture — because for us, it is." },
+          { label: "A gift of the gods — rules merely describe it.", insight: 2,
+            reply: "Many here agree, and call Sanskrit the language of the gods. But notice: even a divine gift turned out to have joints and levers that a mortal could map completely. Whatever its source, language obeys law — and what obeys law can be studied. That is the radical part." },
+          { label: "Just noise we've agreed to share.", insight: 2,
+            reply: "Agreed noise — not bad! But then explain why the noise has such deep symmetry that four thousand rules generate all of it and nothing else. Agreements are sloppy; this is crystalline. Somewhere under the agreement, there is structure nobody chose." }
+        ]
+      },
+      {
+        text: "Now a puzzle I collect from travelers like you. A Greek says PATER, MĒTĒR. We say PITAR, MATAR. A Persian says PIDAR, MADAR. Father, mother — the same bones under three skins. Coincidence?",
+        choices: [
+          { label: "That's too deep to be borrowing — the languages must be kin.", insight: 4,
+            reply: "My own suspicion, though I can't yet prove it! Borrowed words sit on the surface — silk, coin, camel. But father? Mother? Numbers? Those come from the cradle. If Greek, Persian and Sanskrit share their cradle-words, then somewhere behind us is one people, one mother tongue, scattered. Imagine proving that — you would redraw every map of who is kin to whom." },
+          { label: "Merchants carried the words, like everything else.", insight: 2,
+            reply: "A fair guess — the road does carry words; I have a list of them. But watch closely: traded words name traded things. Nobody buys a new word for MOTHER at a bazaar. When the deepest words match, the relation is older than the trade. Something stranger than commerce links us, friend." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Sister Languages",
+      text: "Panini (c. 4th century BCE) compressed all of Sanskrit into ~4,000 generative rules — arguably the first formal system in history, and a direct inspiration for modern linguistics and even computer-language grammars (Backus–Naur form). And the kinship his successors could only suspect was real: in 1786, William Jones, reading Sanskrit in Calcutta, proved it shared an ancestor with Greek, Latin and Persian — the Indo-European discovery that half the Silk Road had been one scattered family speaking one forgotten tongue all along.",
+      route: "Taxila → Calcutta 1786 → modern linguistics"
     }
   },
 
@@ -914,6 +991,26 @@ const QUIZ = [
       "No philosophers at all, only farmers."
     ],
     correct: 1
+  },
+  {
+    req: "jain",
+    q: "A carter chuckles: 'The Jain told you about six blind men and an elephant. What was the lesson?'",
+    options: [
+      "Never trust a blind guide on a mountain road.",
+      "Elephants are too large to be described at all.",
+      "Every doctrine grasps one limb of the truth and mistakes it for the whole."
+    ],
+    correct: 2
+  },
+  {
+    req: "grammarian",
+    q: "A scribe tests you: 'PATER, PITAR, PIDAR — Greek, Sanskrit, Persian for father. What did the grammarian of Taxila suspect?'",
+    options: [
+      "That the languages are kin — scattered children of one mother tongue.",
+      "That Greek merchants sold the word east at a profit.",
+      "That all words for father sound alike by nature."
+    ],
+    correct: 0
   }
 ];
 
@@ -948,6 +1045,19 @@ const MARKET = {
   water:  { label: "Water (5 skins)",      amount: 5,  base: 8,  key: "water"  },
   camel:  { label: "Pack camel",           amount: 1,  base: 60, key: "camels" },
   scroll: { label: "Copy & sell a scroll", amount: 0,  base: 0,  key: "sell"   }
+};
+
+// Lookup helpers and the default (northern) route. Optional cities
+// like Taxila join the route only if the player chooses the detour.
+const CITY_BY_ID = {};
+CITIES.forEach(c => { CITY_BY_ID[c.id] = c; });
+const DEFAULT_ROUTE = CITIES.filter(c => !c.optional).map(c => c.id);
+
+// The Kashgar branch: the southern detour over the Karakoram.
+const DETOUR = {
+  from: "kashgar",
+  via: "taxila",
+  leg: { dist: 700, terrain: "mountain" } // Kashgar → Taxila
 };
 
 const START_STATE = {

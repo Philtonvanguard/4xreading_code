@@ -16,8 +16,11 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
 
 ## How to play
 
-- **Travel** the nine stations of the Silk Road: Chang'an → Dunhuang → Kashgar →
+- **Travel** the stations of the Silk Road: Chang'an → Dunhuang → Kashgar →
   Samarkand → Merv → Ctesiphon → Palmyra → Antioch → Rome.
+- At Kashgar, choose your road: the direct northern route, or the **southern detour
+  over the Karakoram to Taxila** — the great crossroads university city. Only
+  travelers who brave the detour can collect every Connection.
 - Every day on the road consumes **food** and **water**; running out drains your
   **health**. Sandstorms, bandits, fevers, mountain passes and storms at sea will
   test your judgment (sometimes philosophy *is* the best weapon).
@@ -26,7 +29,7 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
   showing how that tradition links to the others.
 - Buy supplies at the **market** — or copy and sell your scrolls to local scribes,
   spreading the ideas *and* funding the trip (this is genuinely how wisdom traveled).
-- **Reach Rome alive** with as many of the 15 Connections as you can.
+- **Reach Rome alive** with as many of the 17 Connections as you can.
 - Pick a **difficulty** at the start: the Scholar's Stroll, the Merchant's Road, or
   the Ascetic's Path (thin silver, harsher roads).
 - Choose your **pace** on the road — easy, steady, or swift — trading speed against health.
@@ -45,6 +48,8 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
 | Dunhuang | A Gandharan monk | Buddhism spread by caravan; Greco-Buddhist art |
 | Dunhuang | A Mohist engineer | Universal love & China's parallel invention of logic |
 | Kashgar | A Sogdian merchant | Translators were the road's invisible philosophers |
+| Taxila ⛰ | A Jain muni | The blind men & the elephant — and ahimsa's 2,000-year relay |
+| Taxila ⛰ | A Pāṇinian grammarian | The sister languages: Sanskrit, Greek, Persian, one cradle |
 | Samarkand | A Zoroastrian priest | Persian seeds in Western ideas of judgment & paradise |
 | Samarkand | A Brahmin gem-trader | *Tat tvam asi*: India's One and Greece's One |
 | Merv | A Greco-Bactrian | The Greek king who debated a Buddhist monk (Milindapañhā) |
