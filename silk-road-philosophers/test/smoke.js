@@ -55,7 +55,8 @@ module.exports = {
   showMarket, startTravel, travelDayTick, triggerEvent, showCodex,
   showVictory, gameOver, PHILOSOPHERS, CITIES, EVENTS, QUIZ,
   ui, applyEffect, closeOverlay, showMap, showTitle,
-  triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES
+  triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES,
+  TOTAL_CONNECTIONS, DIFFICULTIES, chooseDifficulty
 };
 `;
 const mod = { exports: {} };
@@ -120,10 +121,12 @@ for (let cityIdx = 0; cityIdx < game.CITIES.length; cityIdx++) {
   }
 }
 
-assert(game.G.scrolls.length === 10, "collected all 10 scrolls, got " + game.G.scrolls.length);
+assert(game.G.scrolls.length === game.TOTAL_CONNECTIONS,
+  "collected all " + game.TOTAL_CONNECTIONS + " scrolls, got " + game.G.scrolls.length);
 game.showVictory();
 assert(game.mode === "VICTORY", "victory shown");
-assert(ui.text.textContent.includes("10 of 10"), "victory shows 10/10");
+assert(ui.text.textContent.includes(game.TOTAL_CONNECTIONS + " of " + game.TOTAL_CONNECTIONS), "victory shows full count");
+assert(ui.text.textContent.includes("SAGE OF TWO WORLDS"), "full collection earns top rank");
 
 // codex overlay round-trip
 game.showCodex();
@@ -182,6 +185,20 @@ const d1 = game.G.legDist;
 if (game.mode !== "TRAVEL") game.startTravel();
 game.travelDayTick();
 assert(swiftDist > game.G.legDist - d1, "swift pace covers more ground than easy");
+
+// ---- difficulty levels ----
+assert(game.TOTAL_CONNECTIONS === 15, "15 philosophers in the world");
+for (const key of Object.keys(game.DIFFICULTIES)) {
+  const d = game.DIFFICULTIES[key];
+  game.newGame(key);
+  assert(game.G.silver === d.start.silver, key + " sets silver");
+  assert(game.G.food === d.start.food, key + " sets food");
+  assert(game.G.eventChance === d.eventChance, key + " sets event chance");
+}
+game.newGame(); // no arg falls back to merchant
+assert(game.G.silver === game.DIFFICULTIES.merchant.start.silver, "default difficulty is merchant");
+game.chooseDifficulty();
+assert(ui.choices.children.length === 4, "difficulty screen offers 3 paths + back");
 
 // ---- death clears the save ----
 game.newGame();

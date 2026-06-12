@@ -24,7 +24,7 @@ const CITIES = [
     distToNext: 1500,
     intro: "The last oasis before the great desert. Caravans from every direction camp here, and in the cliffs nearby, travelers are beginning to carve shrines.",
     sky: "day",
-    philosophers: ["monk"]
+    philosophers: ["monk", "mohist"]
   },
   {
     id: "kashgar",
@@ -44,7 +44,7 @@ const CITIES = [
     distToNext: 1100,
     intro: "Jewel of Sogdiana. Fire altars glow on the hilltops, and the merchants here are famous for carrying goods — and gods — to the ends of the earth.",
     sky: "dusk",
-    philosophers: ["magus"]
+    philosophers: ["magus", "brahmin"]
   },
   {
     id: "merv",
@@ -64,7 +64,7 @@ const CITIES = [
     distToNext: 900,
     intro: "Twin city on the Tigris, capital of the Parthians. Across the river lies old Seleucia, where Babylonian star-charts are still copied onto clay.",
     sky: "dusk",
-    philosophers: ["astronomer"]
+    philosophers: ["astronomer", "epicurean"]
   },
   {
     id: "palmyra",
@@ -74,7 +74,7 @@ const CITIES = [
     distToNext: 400,
     intro: "City of palms, halfway between two empires. Its temples honor gods from three continents at once, and nobody here finds that strange.",
     sky: "dusk",
-    philosophers: ["skeptic"]
+    philosophers: ["skeptic", "talmid"]
   },
   {
     id: "antioch",
@@ -84,7 +84,7 @@ const CITIES = [
     distToNext: 2200,
     intro: "Third city of the Roman world. Stoic teachers lecture in the colonnades, and the harbor at Seleucia Pieria can carry you across the sea to Italy.",
     sky: "day",
-    philosophers: ["stoic"]
+    philosophers: ["stoic", "cynic"]
   },
   {
     id: "rome",
@@ -202,6 +202,171 @@ const PHILOSOPHERS = {
       title: "Buddhism Rides the Caravans",
       text: "Buddhism spread from India to China not by conquest but by commerce — monasteries grew along Silk Road oases like Dunhuang, doubling as rest-houses for merchants. In Gandhara (modern Pakistan/Afghanistan), Greek settlers left by Alexander's conquests carved the first human images of the Buddha in Hellenistic style: Greco-Buddhist art, a literal fusion of Athens and India.",
       route: "India → Gandhara → Dunhuang → China"
+    }
+  },
+
+  mohist: {
+    name: "Hu Fei",
+    title: "wandering Mohist engineer",
+    portrait: { skin: "#e8b88a", robe: "#5a5a45", hat: "none", beard: "#333333" },
+    nodes: [
+      {
+        text: "You stare — yes, I am a Mohist. Nearly the last of us, I think. While the Confucians polished their rituals, we built siege defenses, studied optics and logic, and taught jian'ai: concern for every person, equally. Tell me, traveler — why should I care for a stranger's family as my own?",
+        choices: [
+          { label: "Because partiality is the root of every war.", insight: 3,
+            reply: "Master Mo's exact argument! Thieves love their own house, so they rob yours. Lords love their own state, so they burn the next one. All the world's harm grows from loving partially. Universal concern is not sentiment — it is engineering against catastrophe." },
+          { label: "I shouldn't — family comes first. That's natural.", insight: 2,
+            reply: "The Confucians agree with you, which is why they hate us. But ask: would you rather entrust your family, in your absence, to a partial man or an impartial one? Even partiality, thinking clearly, hires impartiality. We have a logic-chopper's proof for everything; it is why no one invites us to dinner." },
+          { label: "Caring is not the issue — feeding them is.", insight: 2,
+            reply: "Spoken like a Mohist quartermaster! We also preach against wasteful luxury and elaborate funerals while people starve. Beauty, music, ritual — all suspect until everyone eats. We are, I admit, exhausting company." }
+        ]
+      },
+      {
+        text: "We Mohists also measured shadows and bent light through pinholes; we defined 'point' and 'circle' before defending cities. They say far in the west, men in Greece do the same — argue in proofs and measure the world. Do you believe it?",
+        choices: [
+          { label: "I do — and I suspect you'd recognize each other instantly.", insight: 3,
+            reply: "Ha! Then perhaps reason is like water too — it springs up wherever people quarrel honestly. If my school dies here, traveler, remember us to them: tell the Greeks that someone in the east also loved a straight proof and a straight wall." },
+          { label: "Argument in proofs sounds like a game for idle men.", insight: 1,
+            reply: "A game? A proof is a wall against nonsense, and nonsense kills more people than arrows. The day rulers must show their reasoning is the day fewer villages burn. We were never idle. We were ignored — it is different." }
+        ]
+      }
+    ],
+    connection: {
+      title: "Universal Love and Parallel Logic",
+      text: "Mozi (c. 470–391 BCE) taught jian'ai — impartial concern for all — centuries before Stoic cosmopolitanism preached the same widening of the moral circle in Greece. His school also developed China's first formal logic, optics, and geometry, uncannily parallel to the Greeks they never met. Mohism faded under the Han, but its questions — why should care stop at borders? — kept traveling without it.",
+      route: "Chang'an ↔ Athens (a road never taken)"
+    }
+  },
+
+  brahmin: {
+    name: "Devadatta",
+    title: "Brahmin gem-trader from Taxila",
+    portrait: { skin: "#c98850", robe: "#e0c040", hat: "wrap", beard: "#222222" },
+    nodes: [
+      {
+        text: "These sapphires came north with me from Taxila — a city where Greek, Persian and Indian students share the same teachers. But the brightest gem I carry is a sentence from the Upanishads. When my teacher first spoke it, I sat silent for a day: tat tvam asi — 'you are that.' Shall I explain, or shall I let it sit in you a while?",
+        choices: [
+          { label: "Explain. What am I, exactly?", insight: 3,
+            reply: "Behind your name, your caste, your fears — the self in you, atman — is not different from the one reality behind the whole world, brahman. The wave asks 'where is the sea?' That is the joke, and the teaching. All the rituals are scaffolding around that one recognition." },
+          { label: "Let it sit. Some sentences shouldn't be rushed.", insight: 3,
+            reply: "Ah — you have studied somewhere, I think. Good. The Upanishads are dialogues, you know: students asking kings, wives asking husbands, sons asking fathers. The form matters. Truth that cannot survive a question is not truth." },
+          { label: "Sounds like a riddle for the idle rich.", insight: 1,
+            reply: "My friend, the Upanishads were argued by forest hermits who owned a begging bowl. And note — a Greek I met in Taxila told me one of their sages, Parmenides, also taught that all the many things are one thing. The idle rich of two continents, apparently, dreaming the same dream." }
+        ]
+      },
+      {
+        text: "In Taxila I have watched a Greek argue geometry with a Brahmin while a Persian corrected both their grammar. The young Buddhists, of course, deny my atman entirely — 'no self!' they say. And yet we sit in the same shade to argue it. What do you make of that?",
+        choices: [
+          { label: "The shared shade matters as much as the disagreement.", insight: 3,
+            reply: "Beautifully said. Debate is also a trade route — the Buddhists sharpened our arguments, we sharpened theirs. A tradition with no rivals grows fat and vague. May your west be full of people who disagree with you well." },
+          { label: "One of you must simply be wrong.", insight: 2,
+            reply: "Perhaps! But notice what we share before the quarrel even starts: that the surface of things deceives, that liberation comes by understanding, that a teacher owes students reasons. We disagree like cousins, not strangers. That, too, is a finding." }
+        ]
+      }
+    ],
+    connection: {
+      title: "'You Are That': India's One and Greece's One",
+      text: "The Upanishads taught that one reality (brahman) underlies all appearances and is identical with the deepest self (tat tvam asi — 'you are that'). In the same centuries, Greek thinkers like Parmenides argued that all being is one, a line that flows into Plato and, much later, Neoplatonism — whose echoes of Indian monism scholars still debate. At crossroads universities like Taxila, where Greek, Persian and Indian students genuinely mixed, the two Ones could look each other in the eye.",
+      route: "Taxila ↔ Elea ↔ Alexandria"
+    }
+  },
+
+  epicurean: {
+    name: "Philonides",
+    title: "Epicurean philosopher of Seleucia",
+    portrait: { skin: "#e8c098", robe: "#6b8a5a", hat: "none", beard: "#776655" },
+    nodes: [
+      {
+        text: "Welcome to our Garden — yes, even here on the Tigris we keep one, as Epicurus did in Athens. My predecessor Philonides taught Epicurus' philosophy to a Seleucid king, so do not let anyone tell you philosophy can't cross borders. Now: you look like a man who fears something. Death, perhaps?",
+        choices: [
+          { label: "Doesn't everyone?", insight: 2,
+            reply: "Everyone unschooled, yes. But attend: where death is, you are not; where you are, death is not. You will never meet it. Fearing death is fearing a meeting that cannot occur. Half of human misery dissolves in that one syllogism — no temple fees required." },
+          { label: "Not death — but perhaps the gods.", insight: 3,
+            reply: "Even better, for that fear is the more profitable one — to priests. The gods, if they exist, are blessed and untroubled; a being that punishes and schemes would be neither. The thunder is weather, not wrath. Fear sold as piety is still fear." },
+          { label: "I fear nothing. Philosophy has cured me.", insight: 1,
+            reply: "Marvelous! Then you won't mind that wasp on your shoulder. ...Ah, there is the flinch. No shame, friend — the cure is a practice, not a boast. Come, sit, eat bread and cheese with us. Simplicity is the feast." }
+        ]
+      },
+      {
+        text: "We teach that everything — stars, souls, this bread — is atoms moving in the void, combining and scattering. Democritus saw it first. Now here is a strange thing: travelers from India tell me their Vaisheshika sages also resolve the world into invisible particles — anu. What do you conclude?",
+        choices: [
+          { label: "Maybe matter itself suggests the idea to anyone who stares hard enough.", insight: 3,
+            reply: "My own view! Watch dust in a sunbeam, watch water wear stone — the world hints at its grain. Two peoples, no contact we know of, the same audacious guess: that the seeming smoothness of things is a crowd of tiny dancers. It makes one trust reason a little more, and borders a little less." },
+          { label: "Obviously one of them stole it.", insight: 1,
+            reply: "Then name the caravan that carried it! No — sometimes ideas are not traded but twinned. Though I grant you this road makes it ever harder to tell. Either way the lesson stands: truth does not check your passport." }
+        ]
+      }
+    ],
+    connection: {
+      title: "Atoms East and West",
+      text: "Greek atomism (Democritus, then Epicurus) and Indian Vaisheshika atomism (anu) arose in roughly the same centuries, each claiming the world is built of invisible particles — with no proven contact between them. Epicureanism genuinely traveled east: Philonides of Laodicea taught it at the Seleucid court in this very region. Whether twinned or traded, atomism is the era's best case that human reason, pointed at the same world, finds the same shapes.",
+      route: "Athens → Seleucia · twin spring in India"
+    }
+  },
+
+  talmid: {
+    name: "Yohanan",
+    title: "merchant, student of the sages of Jerusalem",
+    portrait: { skin: "#d9a06b", robe: "#4a5a8a", hat: "cap", beard: "#443322" },
+    nodes: [
+      {
+        text: "I trade purple dye, but I was schooled in Jerusalem, and I will tell you of my teacher's teacher, Hillel. A scoffer once demanded: 'Teach me the whole Torah while I stand on one foot.' Most masters would have beaten him with a measuring rod. What do you suppose Hillel did?",
+        choices: [
+          { label: "Answered him in one sentence.", insight: 3,
+            reply: "He did: 'What is hateful to you, do not do to your fellow. That is the whole Torah — the rest is commentary. Now go and study.' One foot was enough. The scoffer became a student. Gentleness, my teacher said, converts more than thunder." },
+          { label: "Refused — wisdom can't be compressed.", insight: 2,
+            reply: "His rival Shammai thought exactly that, and drove the man off with a builder's cubit! But Hillel answered in one sentence: what is hateful to you, do not do to your fellow; the rest is commentary — go and study. Note the ending. The sentence is a door, not a house." },
+          { label: "Charged him double for the rush order.", insight: 1,
+            reply: "Ha! You have been among merchants too long, friend. No — he answered: what is hateful to you, do not do to your fellow. The whole Torah on one foot. And then: 'now go and study' — the door is free; the house takes a lifetime." }
+        ]
+      },
+      {
+        text: "Here is what unsettles me, pleasantly, late at night. A silk trader told me a Chinese master gave the same rule, in nearly the same words, four hundred years before Hillel. The same sentence — at the two ends of the earth. What does that mean, traveler?",
+        choices: [
+          { label: "I met that master's students in Chang'an. The trader spoke true.", insight: 4,
+            reply: "Then you carry the proof in your scroll case! Two peoples who never met, writing one rule in two scripts. My teacher would say the rule was always there — carved into what it is to face another person — and the nations are simply learning to read. Go west, friend. Tell them what you carry." },
+          { label: "That two men can stumble on the same stone.", insight: 2,
+            reply: "A modest answer — maybe the truest kind. But what a stone! Not 'be strong,' not 'be first' — but 'first, do no harm you would not bear.' If the nations must trip over something, let it be that." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Whole Law on One Foot",
+      text: "Hillel the Elder (c. 110 BCE–10 CE) compressed the Torah to: 'What is hateful to you, do not do to your fellow — the rest is commentary.' It is, almost word for word, the rule Confucius gave in China four centuries earlier, and a generation after Hillel it appears again in the Gospels. The ethic of reciprocity is the Silk Road's deepest cargo: discovered separately, then recognized mutually, at every stop along the way.",
+      route: "Jerusalem ↔ Chang'an — the road's bookends"
+    }
+  },
+
+  cynic: {
+    name: "Krates",
+    title: "Cynic of the Antioch colonnades",
+    portrait: { skin: "#d9a06b", robe: "#8a7355", hat: "none", beard: "#555544" },
+    nodes: [
+      {
+        text: "No, I will not stand up; the sun is warm and you are blocking none of it. I am a Cynic — we own one cloak, one staff, one bowl, and we threw away the bowl when we saw a boy drink from his hands. You travel heavy, philosopher. All those scrolls — do you own them, or do they own you?",
+        choices: [
+          { label: "A fair cut. But these scrolls carry other people's wisdom, not my wealth.", insight: 3,
+            reply: "Hmph. The least bad answer I've heard this month. Diogenes carried nothing and said everything; but I grant that not every dog can live in a jar. Carry your scrolls, then — but mind the day you start polishing the cases instead of reading the contents." },
+          { label: "They're tools of my trade, like your staff.", insight: 2,
+            reply: "My staff drives off dogs and rich men's servants; what do your scrolls drive off? ...Ignorance? Ha! We shall see. Diogenes saw Plato's library and asked where the philosophy was kept. Books are wisdom's shadow. Still — better to chase a shadow than nothing." },
+          { label: "How dare you — I've crossed half the world for these!", insight: 1,
+            reply: "And the world noticed not at all! Peace, friend. Alexander crossed the world too, and Diogenes asked him only to step out of his light. Distance is not depth. But you are here, and listening, which most are not. Sit. The sun is wide enough for two." }
+        ]
+      },
+      {
+        text: "You know it was a Cynic who first said kosmopolites — when they asked Diogenes his city, he said 'I am a citizen of the world.' And here is my favorite gossip: when Alexander reached India, he sent Onesicritus — a Cynic! — to interview the naked sages there. Guess what he found.",
+        choices: [
+          { label: "Philosophers living exactly like Diogenes.", insight: 3,
+            reply: "Exactly! Men who owned nothing, feared nothing, and laughed at the conqueror's offer of gifts. Onesicritus wrote that they did with ease what we Cynics strain at. Two ends of the earth, and the same discovery: the man who needs least is freest. The Stoics in that colonnade took our 'world citizen' and dressed it in respectability. We forgive them. Mostly." },
+          { label: "Riches and wonders beyond counting.", insight: 1,
+            reply: "Riches! He found philosophers wearing nothing but air, who refused Alexander's gold and told the world-conqueror to sit in the dirt and learn. The wonder was that Greeks and Indians, never having met, had both concluded: strip away wants, and no king on earth has a handle to grab you by." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Dog and the Naked Sages",
+      text: "When Alexander reached India in 326 BCE, he sent Onesicritus — a follower of Diogenes the Cynic — to interview the gymnosophists, India's ascetic philosophers. The Cynic recognized them instantly: people who, like Diogenes, had renounced possessions and convention to live free 'according to nature.' Greek and Indian asceticism met and saw themselves in each other — and the Cynics' 'citizen of the world' became the seed of Stoic cosmopolitanism.",
+      route: "Athens → India → back, with eyes opened"
     }
   },
 
@@ -699,8 +864,83 @@ const QUIZ = [
       "Priests of the city gods."
     ],
     correct: 1
+  },
+  {
+    req: "mohist",
+    q: "A caravan guard asks: 'That grim Mohist you met — what did his master Mozi say all the world's harm grows from?'",
+    options: [
+      "Loving partially — caring for your own and not the stranger's.",
+      "Failing to honor the ancestors.",
+      "Building walls too low."
+    ],
+    correct: 0
+  },
+  {
+    req: "brahmin",
+    q: "A young scribe leans in: 'The gem-trader's Upanishad — tat tvam asi. What does \"you are that\" mean?'",
+    options: [
+      "That every man is what he owns.",
+      "That the deepest self and the one reality behind the world are the same.",
+      "That travelers become whatever land they cross."
+    ],
+    correct: 1
+  },
+  {
+    req: "epicurean",
+    q: "A nervous merchant whispers: 'The Epicurean in the Garden — what did he say about fearing death?'",
+    options: [
+      "Fear it daily, so it finds you prepared.",
+      "Only the gods can free you from it, for a fee.",
+      "Where death is, you are not — you will never meet it, so the fear is empty."
+    ],
+    correct: 2
+  },
+  {
+    req: "talmid",
+    q: "A dye-trader asks: 'Hillel taught the whole Torah on one foot. What was the sentence?'",
+    options: [
+      "What is hateful to you, do not do to your fellow — the rest is commentary.",
+      "Honor the strong, for they keep the roads safe.",
+      "Give a tenth of all you earn, and ask no questions."
+    ],
+    correct: 0
+  },
+  {
+    req: "cynic",
+    q: "A bored soldier asks: 'When Alexander's Cynic interviewed India's naked sages, what did he find?'",
+    options: [
+      "Treasure houses guarded by riddles.",
+      "Philosophers living exactly like Diogenes — free because they needed nothing.",
+      "No philosophers at all, only farmers."
+    ],
+    correct: 1
   }
 ];
+
+// ------------------------------------------------------------
+// Difficulty settings, chosen at the start of a journey.
+// ------------------------------------------------------------
+
+const DIFFICULTIES = {
+  scholar: {
+    label: "The Scholar's Stroll",
+    blurb: "A well-funded expedition. Gentler roads, fuller purse — for travelers here for the ideas.",
+    start: { food: 40, water: 32, silver: 300 },
+    eventChance: 0.16, priceMul: 0.9
+  },
+  merchant: {
+    label: "The Merchant's Road",
+    blurb: "The standard journey. Honest dangers, honest prices.",
+    start: { food: 30, water: 25, silver: 220 },
+    eventChance: 0.22, priceMul: 1.0
+  },
+  ascetic: {
+    label: "The Ascetic's Path",
+    blurb: "One cloak, one staff, thin silver. The road will test the body as the dialogues test the mind.",
+    start: { food: 20, water: 18, silver: 130 },
+    eventChance: 0.30, priceMul: 1.2
+  }
+};
 
 // Market price baseline (silver). Cities vary slightly by multiplier.
 const MARKET = {

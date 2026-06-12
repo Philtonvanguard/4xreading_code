@@ -34,11 +34,17 @@ let lastTime = 0;
 let currentEvent = null;
 let dialogue = null;   // { phil, nodeIndex, phase: "ask"|"reply", reply }
 
-function newGame() {
-  G = Object.assign({}, START_STATE, {
+const TOTAL_CONNECTIONS = Object.keys(PHILOSOPHERS).length;
+
+function newGame(diffKey) {
+  const diff = DIFFICULTIES[diffKey] || DIFFICULTIES.merchant;
+  G = Object.assign({}, START_STATE, diff.start, {
     cityIndex: 0,
     legDist: 0,
     pace: "steady",
+    eventChance: diff.eventChance,
+    priceMul: diff.priceMul,
+    difficulty: diff.label,
     scrolls: [],
     met: {},
     soldAt: {},
@@ -170,14 +176,26 @@ function showTitle() {
   const save = loadSave();
   if (save && CITIES[save.cityIndex]) {
     addChoice("⟲  Continue your journey — Day " + save.day + ", near " + CITIES[save.cityIndex].name, () => {
-      G = save;
+      // older saves may predate difficulty settings
+      G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {} }, save);
       if (G.legDist > 0) { updateStats(); pauseTravel(); }
       else arriveAtCity(false);
     });
   }
-  addChoice("⟶  Begin " + (save ? "a new" : "the") + " journey", () => { newGame(); arriveAtCity(true); });
+  addChoice("⟶  Begin " + (save ? "a new" : "the") + " journey", chooseDifficulty);
   addChoice("?   How to play", showHelp);
   ui.hint.textContent = "an Oregon Trail–like for the history of ideas";
+}
+
+function chooseDifficulty() {
+  setSpeaker("OUTFITTING THE EXPEDITION");
+  setText("Three kinds of traveler walk this road. Which are you?");
+  clearChoices();
+  Object.keys(DIFFICULTIES).forEach(key => {
+    const d = DIFFICULTIES[key];
+    addChoice(d.label + " — " + d.blurb, () => { newGame(key); arriveAtCity(true); });
+  });
+  addChoice("⟵  Back", showTitle);
 }
 
 function showHelp() {
@@ -303,7 +321,7 @@ function finishDialogue() {
 
 function priceAt(base) {
   // prices drift upward as you go west (silk economics in miniature)
-  return Math.round(base * (1 + G.cityIndex * 0.08));
+  return Math.round(base * (1 + G.cityIndex * 0.08) * (G.priceMul || 1));
 }
 
 function showMarket() {
@@ -431,8 +449,9 @@ function travelDayTick() {
     return;
   }
   const roll = Math.random();
-  if (roll < 0.22) triggerEvent();
-  else if (roll < 0.30 && availableQuizzes().length) triggerQuiz();
+  const evChance = G.eventChance || 0.22;
+  if (roll < evChance) triggerEvent();
+  else if (roll < evChance + 0.08 && availableQuizzes().length) triggerQuiz();
 }
 
 // --- campfire quizzes ----------------------------------------
@@ -508,7 +527,7 @@ function showCodex() {
   if (mode === "TRAVEL") pauseTravel();
   if (mode !== "MAP") returnMode = mode; // stacked overlays keep the original return point
   mode = "CODEX";
-  setSpeaker("THE CODEX OF CONNECTIONS — " + (G ? G.scrolls.length : 0) + " of 10 threads found");
+  setSpeaker("THE CODEX OF CONNECTIONS — " + (G ? G.scrolls.length : 0) + " of " + TOTAL_CONNECTIONS + " threads found");
   if (!G || G.scrolls.length === 0) {
     setText("The codex is empty. Seek out the philosophers in each city — every completed dialogue records a thread of connection between the world's traditions.");
   } else {
@@ -561,7 +580,7 @@ function gameOver(text) {
   sfx.danger();
   setSpeaker("THE ROAD ENDS");
   setText(text + "\n\nDays traveled: " + G.day + "   ·   Insight: " + G.insight +
-    "   ·   Connections found: " + G.scrolls.length + " of 10" +
+    "   ·   Connections found: " + G.scrolls.length + " of " + TOTAL_CONNECTIONS +
     "\n\nBut ideas do not die with their carriers. Someone will find your scrolls.");
   clearChoices();
   addChoice("↻  Begin a new journey", () => { newGame(); arriveAtCity(true); });
@@ -574,15 +593,15 @@ function showVictory() {
   sfx.scroll();
   const score = G.insight * 2 + G.scrolls.length * 10 + Math.floor(G.health / 5);
   let rank;
-  if (G.scrolls.length >= 10 && score >= 110) rank = "SAGE OF TWO WORLDS — the full web of connections, carried intact across the earth.";
-  else if (G.scrolls.length >= 7) rank = "MASTER OF THE ROAD — most of the great threads are in your codex.";
-  else if (G.scrolls.length >= 4) rank = "JOURNEYING SCHOLAR — you glimpsed the web, even if some threads escaped you.";
+  if (G.scrolls.length >= TOTAL_CONNECTIONS) rank = "SAGE OF TWO WORLDS — the full web of connections, carried intact across the earth.";
+  else if (G.scrolls.length >= Math.ceil(TOTAL_CONNECTIONS * 0.66)) rank = "MASTER OF THE ROAD — most of the great threads are in your codex.";
+  else if (G.scrolls.length >= Math.ceil(TOTAL_CONNECTIONS * 0.4)) rank = "JOURNEYING SCHOLAR — you glimpsed the web, even if some threads escaped you.";
   else rank = "SURVIVOR OF THE ROAD — you arrived alive. The ideas, mostly, stayed home.";
   setSpeaker("ROME — JOURNEY'S END");
   setText(
     "Day " + G.day + ". You stand in the Roman forum wearing a Persian coat, quoting a Chinese sage in Greek, " +
     "with Babylonian hours marked on the sundial behind you.\n\n" +
-    "Connections found: " + G.scrolls.length + " of 10\nInsight: " + G.insight + "    Final score: " + score +
+    "Connections found: " + G.scrolls.length + " of " + TOTAL_CONNECTIONS + "\nInsight: " + G.insight + "    Final score: " + score +
     "\n\n" + rank +
     "\n\nWhat the Silk Road proves is simple and enormous: no philosophy grew alone. " +
     "Every tradition you met was already in conversation with the others — through merchants, monks, " +
