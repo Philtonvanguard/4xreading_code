@@ -603,6 +603,105 @@ const EVENTS = [
   }
 ];
 
+// ------------------------------------------------------------
+// Campfire quizzes. Fellow travelers test what you've learned —
+// each only appears once you hold the matching scroll (req).
+// Correct answers earn insight and a listener's tip in silver.
+// ------------------------------------------------------------
+
+const QUIZ = [
+  {
+    req: "dong",
+    q: "A young clerk shares your fire. 'You met Master Dong in Chang'an? Then tell me — what did he call the heart of Confucius' teaching?'",
+    options: [
+      "Do not impose on others what you do not wish for yourself.",
+      "Obey the law, and the law will protect you.",
+      "Seek profit, for profit feeds the family."
+    ],
+    correct: 0
+  },
+  {
+    req: "hermit",
+    q: "A Greek trader pokes the fire. 'This wu wei the hermits speak of — acting without forcing. We have nothing like it in the West... do we?'",
+    options: [
+      "You do — the Stoics' 'living in agreement with nature' is its cousin.",
+      "No, the West believes only in conquest.",
+      "Wu wei means doing nothing at all, so it cannot travel."
+    ],
+    correct: 0
+  },
+  {
+    req: "monk",
+    q: "A drover asks: 'These Buddhist monks keep appearing along the road. Whose armies are spreading their teaching?'",
+    options: [
+      "An emperor's, surely — ideas need swords.",
+      "No armies — it travels with merchants, one caravan stop at a time.",
+      "The monks march in legions of their own."
+    ],
+    correct: 1
+  },
+  {
+    req: "sogdian",
+    q: "A pilgrim wonders aloud: 'Why is it that half the letters on this road are written in Sogdian?'",
+    options: [
+      "Because Sogdian paper is the cheapest.",
+      "Because their king commands the whole road.",
+      "Because their tongue is the road's common language — translation is their real trade."
+    ],
+    correct: 2
+  },
+  {
+    req: "magus",
+    q: "A Judean merchant muses: 'Walled gardens, judgment after death, a war of light and dark... and that Persian word the priests use — pairi-daeza. What did the West make of it?'",
+    options: [
+      "Nothing — Persia kept its words at home.",
+      "The word 'paradise' — and more than the word traveled with it.",
+      "It became the name of a coin."
+    ],
+    correct: 1
+  },
+  {
+    req: "bactrian",
+    q: "A veteran of the eastern garrisons asks: 'I heard a Greek king once debated a Buddhist monk. What did the monk compare the self to?'",
+    options: [
+      "A chariot — only a name for parts in motion.",
+      "An undying flame passed between lamps.",
+      "A king's seal, fixed and eternal."
+    ],
+    correct: 0
+  },
+  {
+    req: "astronomer",
+    q: "A sailor squints at the stars. 'You studied with the Babylonians. What of theirs do ordinary people use every single day without knowing it?'",
+    options: [
+      "Their alphabet.",
+      "Their recipe for beer.",
+      "Their numbers — 60-minute hours and the 360-degree circle."
+    ],
+    correct: 2
+  },
+  {
+    req: "skeptic",
+    q: "A student traveling to Athens asks: 'Pyrrho the Skeptic — where might his doubt have been born?'",
+    options: [
+      "In India, among the naked philosophers he met with Alexander.",
+      "In Sparta, from the silence of soldiers.",
+      "In Egypt, from the riddles of priests."
+    ],
+    correct: 0
+  },
+  {
+    req: "stoic",
+    q: "A centurion's scribe frowns: 'The Stoics call themselves kosmopolites. What are they claiming to be?'",
+    options: [
+      "Collectors of cosmic taxes.",
+      "Citizens of the whole cosmos — one world-city of all rational beings.",
+      "Priests of the city gods."
+    ],
+    correct: 1
+  }
+];
+
 // Market price baseline (silver). Cities vary slightly by multiplier.
 const MARKET = {
   food:   { label: "Food (5 days)",        amount: 5,  base: 10, key: "food"   },

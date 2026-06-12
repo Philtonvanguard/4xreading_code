@@ -38,12 +38,71 @@ function newGame() {
   G = Object.assign({}, START_STATE, {
     cityIndex: 0,
     legDist: 0,
+    pace: "steady",
     scrolls: [],
     met: {},
     soldAt: {},
+    askedQuiz: {},
     causeOfEnd: ""
   });
 }
+
+// --- save / load ---------------------------------------------
+
+const SAVE_KEY = "silk_road_of_ideas_save";
+const hasStorage = typeof localStorage !== "undefined";
+
+function saveGame() {
+  if (!hasStorage || !G) return;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { /* private mode etc. */ }
+}
+
+function loadSave() {
+  if (!hasStorage) return null;
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function clearSave() {
+  if (hasStorage) try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+}
+
+// --- sound (procedural WebAudio, no asset files) -------------
+
+let audioCtx = null;
+let muted = false;
+
+function tone(freq, dur, type, vol, when) {
+  if (muted) return;
+  try {
+    if (!audioCtx) {
+      const AC = typeof AudioContext !== "undefined" ? AudioContext :
+                 (typeof webkitAudioContext !== "undefined" ? webkitAudioContext : null);
+      if (!AC) return;
+      audioCtx = new AC();
+    }
+    const t = audioCtx.currentTime + (when || 0);
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type || "square";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.04, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(t);
+    o.stop(t + dur);
+  } catch (e) { /* audio is a luxury, never a crash */ }
+}
+
+const sfx = {
+  click:   () => tone(440, 0.06, "square", 0.025),
+  scroll:  () => { tone(523, 0.12, "triangle", 0.05); tone(659, 0.12, "triangle", 0.05, 0.12); tone(784, 0.2, "triangle", 0.05, 0.24); },
+  danger:  () => { tone(196, 0.18, "sawtooth", 0.04); tone(147, 0.25, "sawtooth", 0.04, 0.15); },
+  coin:    () => { tone(988, 0.07, "square", 0.03); tone(1319, 0.1, "square", 0.03, 0.06); },
+  arrive:  () => { tone(392, 0.1, "triangle", 0.04); tone(523, 0.15, "triangle", 0.04, 0.1); }
+};
 
 // --- helpers -------------------------------------------------
 
@@ -57,7 +116,7 @@ function addChoice(label, fn, cls) {
   const b = document.createElement("button");
   b.textContent = label;
   if (cls) b.classList.add(cls);
-  b.onclick = fn;
+  b.onclick = () => { sfx.click(); fn(); };
   ui.choices.appendChild(b);
   return b;
 }
@@ -108,7 +167,15 @@ function showTitle() {
     "have been talking to each other all along."
   );
   clearChoices();
-  addChoice("⟶  Begin the journey", () => { newGame(); arriveAtCity(true); });
+  const save = loadSave();
+  if (save && CITIES[save.cityIndex]) {
+    addChoice("⟲  Continue your journey — Day " + save.day + ", near " + CITIES[save.cityIndex].name, () => {
+      G = save;
+      if (G.legDist > 0) { updateStats(); pauseTravel(); }
+      else arriveAtCity(false);
+    });
+  }
+  addChoice("⟶  Begin " + (save ? "a new" : "the") + " journey", () => { newGame(); arriveAtCity(true); });
   addChoice("?   How to play", showHelp);
   ui.hint.textContent = "an Oregon Trail–like for the history of ideas";
 }
@@ -133,6 +200,8 @@ function arriveAtCity(first) {
   mode = "CITY";
   G.legDist = 0;
   updateStats();
+  saveGame();
+  sfx.arrive();
   const c = city();
   setSpeaker(c.name.toUpperCase() + " — " + c.region);
   setText(c.intro + (first ? "\n\nSeek out the local thinkers before you depart — every scroll you carry makes the journey worth more." : ""));
@@ -217,6 +286,8 @@ function finishDialogue() {
   G.met[dialogue.pid] = true;
   G.scrolls.push(p.connection);
   updateStats();
+  saveGame();
+  sfx.scroll();
   setSpeaker("✦ CONNECTION RECORDED IN YOUR CODEX ✦");
   setText("「 " + p.connection.title + " 」\n\n" + p.connection.text);
   clearChoices();
@@ -284,25 +355,43 @@ function marketSay(t) { setText(t); marketMenu(); }
 
 // --- TRAVEL --------------------------------------------------
 
+const PACES = {
+  easy:   { label: "Easy — slow, restful",        speedMul: 0.65, health: +1 },
+  steady: { label: "Steady — the caravan's pace", speedMul: 1.0,  health: 0  },
+  swift:  { label: "Swift — hard on body & beast", speedMul: 1.4, health: -2 }
+};
+const PACE_ORDER = ["easy", "steady", "swift"];
+
 function startTravel() {
   mode = "TRAVEL";
   travelTimer = 0;
   setSpeaker(null);
   travelText();
+  travelChoices();
+}
+
+function travelChoices() {
   clearChoices();
   addChoice("⌖  Make camp (pause)", pauseTravel);
+  addChoice("≋  Pace: " + PACES[G.pace].label + "  (tap to change)", () => {
+    const i = PACE_ORDER.indexOf(G.pace);
+    G.pace = PACE_ORDER[(i + 1) % PACE_ORDER.length];
+    travelText();
+    travelChoices();
+  });
 }
 
 function travelText(extra) {
   const c = city(), n = nextCity();
   const remaining = Math.max(0, c.distToNext - Math.floor(G.legDist));
   setText("On the road: " + c.name + "  ⟶  " + n.name +
-    "\nTerrain: " + c.terrainToNext + "   ·   " + remaining + " km remaining" +
+    "\nTerrain: " + c.terrainToNext + "   ·   " + remaining + " km remaining   ·   pace: " + G.pace +
     (extra ? "\n\n" + extra : ""));
 }
 
 function pauseTravel() {
   mode = "CAMP";
+  saveGame();
   travelText("You make camp. The animals kneel; the kettle goes on. The road will wait.");
   clearChoices();
   addChoice("⟶  Break camp and continue", startTravel);
@@ -314,9 +403,11 @@ function pauseTravel() {
 
 function travelDayTick() {
   const c = city();
-  const speed = 150 + Math.min(G.camels, 4) * 20 + (c.terrainToNext === "sea" ? 120 : 0);
+  const pace = PACES[G.pace] || PACES.steady;
+  const speed = Math.round((150 + Math.min(G.camels, 4) * 20 + (c.terrainToNext === "sea" ? 120 : 0)) * pace.speedMul);
   G.legDist += speed;
   G.day += 1;
+  G.health = Math.min(100, G.health + pace.health);
   G.food = Math.max(0, G.food - 1);
   const thirst = c.terrainToNext === "desert" ? 2 : 1;
   G.water = Math.max(0, G.water - (c.terrainToNext === "sea" ? 0 : thirst));
@@ -339,7 +430,39 @@ function travelDayTick() {
     arriveAtCity(false);
     return;
   }
-  if (Math.random() < 0.24) triggerEvent();
+  const roll = Math.random();
+  if (roll < 0.22) triggerEvent();
+  else if (roll < 0.30 && availableQuizzes().length) triggerQuiz();
+}
+
+// --- campfire quizzes ----------------------------------------
+
+function availableQuizzes() {
+  return QUIZ.filter(q => G.met[q.req] && !G.askedQuiz[q.req]);
+}
+
+function triggerQuiz() {
+  const pool = availableQuizzes();
+  const quiz = pool[Math.floor(Math.random() * pool.length)];
+  G.askedQuiz[quiz.req] = true;
+  mode = "EVENT";
+  setSpeaker("✦ A QUESTION AT THE CAMPFIRE");
+  setText(quiz.q);
+  clearChoices();
+  quiz.options.forEach((opt, i) => {
+    addChoice("» " + opt, () => {
+      if (i === quiz.correct) {
+        applyEffect({ insight: 3, silver: 8 });
+        sfx.coin();
+        setText("Your answer rings true, and the fire circle nods. Someone presses a few coins on you — \"for the teaching.\" This, too, is how philosophers ate.\n\n(+3 insight, +8 silver)");
+      } else {
+        applyEffect({ insight: 1 });
+        setText("You fumble it, and an old pilgrim gently sets you right:\n\n\"" + quiz.options[quiz.correct] + "\"\n\nWisdom reviewed is wisdom doubled. (+1 insight)");
+      }
+      clearChoices();
+      addChoice("⟶  Continue on", startTravel);
+    });
+  });
 }
 
 function flavorLine() {
@@ -362,6 +485,7 @@ function triggerEvent() {
   for (const e of pool) { roll -= e.weight; if (roll <= 0) { ev = e; break; } }
   currentEvent = ev;
   mode = "EVENT";
+  sfx.danger();
   setSpeaker("⚠ " + ev.title.toUpperCase());
   setText(ev.text);
   clearChoices();
@@ -433,6 +557,8 @@ function closeOverlay() {
 function gameOver(text) {
   mode = "GAMEOVER";
   G.causeOfEnd = text;
+  clearSave();
+  sfx.danger();
   setSpeaker("THE ROAD ENDS");
   setText(text + "\n\nDays traveled: " + G.day + "   ·   Insight: " + G.insight +
     "   ·   Connections found: " + G.scrolls.length + " of 10" +
@@ -444,6 +570,8 @@ function gameOver(text) {
 
 function showVictory() {
   mode = "VICTORY";
+  clearSave();
+  sfx.scroll();
   const score = G.insight * 2 + G.scrolls.length * 10 + Math.floor(G.health / 5);
   let rank;
   if (G.scrolls.length >= 10 && score >= 110) rank = "SAGE OF TWO WORLDS — the full web of connections, carried intact across the earth.";
@@ -532,6 +660,10 @@ function render(t) {
 
 document.getElementById("btn-codex").onclick = showCodex;
 document.getElementById("btn-map").onclick = showMap;
+document.getElementById("btn-sound").onclick = function () {
+  muted = !muted;
+  this.textContent = "Sound: " + (muted ? "off" : "on");
+};
 
 showTitle();
 requestAnimationFrame(render);

@@ -36,6 +36,12 @@ global.document = {
 };
 global.requestAnimationFrame = () => {}; // no loop needed; we call ticks manually
 global.window = global;
+const storeMap = {};
+global.localStorage = {
+  getItem: k => (k in storeMap ? storeMap[k] : null),
+  setItem: (k, v) => { storeMap[k] = String(v); },
+  removeItem: k => { delete storeMap[k]; }
+};
 
 let src = "";
 for (const f of ["js/data.js", "js/sprites.js", "js/game.js"]) {
@@ -47,8 +53,9 @@ module.exports = {
   get G() { return G; }, get mode() { return mode; },
   newGame, arriveAtCity, cityMenu, startDialogue, renderDialogue,
   showMarket, startTravel, travelDayTick, triggerEvent, showCodex,
-  showVictory, gameOver, PHILOSOPHERS, CITIES, EVENTS,
-  ui, applyEffect, closeOverlay, showMap
+  showVictory, gameOver, PHILOSOPHERS, CITIES, EVENTS, QUIZ,
+  ui, applyEffect, closeOverlay, showMap, showTitle,
+  triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES
 };
 `;
 const mod = { exports: {} };
@@ -134,9 +141,53 @@ for (const ev of game.EVENTS) {
   }
 }
 
-// death path
+// ---- quizzes: every quiz answerable right and wrong ----
+for (const quiz of game.QUIZ) {
+  game.newGame();
+  game.G.met[quiz.req] = true;
+  assert(game.availableQuizzes().length === 1, "quiz available for " + quiz.req);
+  game.triggerQuiz();
+  assert(game.mode === "EVENT", "quiz shows as event");
+  const before = game.G.insight;
+  clickChoice(quiz.correct);
+  assert(game.G.insight === before + 3, "correct answer rewards insight for " + quiz.req);
+  assert(game.availableQuizzes().length === 0, "quiz not repeated for " + quiz.req);
+  // wrong answer path
+  game.G.askedQuiz = {};
+  game.triggerQuiz();
+  clickChoice((quiz.correct + 1) % quiz.options.length);
+  assert(game.G.insight === before + 4, "wrong answer still teaches for " + quiz.req);
+}
+
+// ---- save / continue ----
 game.newGame();
+game.arriveAtCity(true);
+assert(game.loadSave() !== null, "arriving at a city saves the game");
+game.G.silver = 4321;
+game.saveGame();
+game.showTitle();
+assert(ui.choices.children.some(b => b.textContent.includes("Continue your journey")), "title offers continue");
+clickChoice(0); // continue
+assert(game.G.silver === 4321, "continue restores saved state");
+assert(game.mode === "CITY", "continue resumes at city");
+
+// ---- pace changes speed ----
+game.G.pace = "swift";
+const d0 = game.G.legDist;
+game.startTravel();
+game.travelDayTick();
+const swiftDist = game.G.legDist - d0;
+game.G.pace = "easy";
+const d1 = game.G.legDist;
+if (game.mode !== "TRAVEL") game.startTravel();
+game.travelDayTick();
+assert(swiftDist > game.G.legDist - d1, "swift pace covers more ground than easy");
+
+// ---- death clears the save ----
+game.newGame();
+game.arriveAtCity(true);
 game.applyEffect({ health: -200 });
 assert(game.mode === "GAMEOVER", "game over on death");
+assert(game.loadSave() === null, "death clears the save");
 
-console.log("SMOKE TEST PASSED —", assertions, "assertions. Final day:", "ok");
+console.log("SMOKE TEST PASSED —", assertions, "assertions.");

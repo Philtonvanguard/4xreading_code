@@ -27,6 +27,12 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
 - Buy supplies at the **market** — or copy and sell your scrolls to local scribes,
   spreading the ideas *and* funding the trip (this is genuinely how wisdom traveled).
 - **Reach Rome alive** with as many of the 10 Connections as you can.
+- Choose your **pace** on the road — easy, steady, or swift — trading speed against health.
+- At night, fellow travelers may **quiz you at the campfire** about the Connections you
+  carry; answering well earns insight and a listener's tip in silver.
+- The game **auto-saves** at every city and camp — close the tab and continue later
+  from the title screen. (Death erases the save. The road is honest that way.)
+- Procedural **sound effects** via WebAudio — no audio files; mute button in the footer.
 
 ## Who you'll meet
 
