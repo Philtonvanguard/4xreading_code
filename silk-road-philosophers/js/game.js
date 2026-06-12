@@ -84,40 +84,7 @@ function clearSave() {
   if (hasStorage) try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
 }
 
-// --- sound (procedural WebAudio, no asset files) -------------
-
-let audioCtx = null;
-let muted = false;
-
-function tone(freq, dur, type, vol, when) {
-  if (muted) return;
-  try {
-    if (!audioCtx) {
-      const AC = typeof AudioContext !== "undefined" ? AudioContext :
-                 (typeof webkitAudioContext !== "undefined" ? webkitAudioContext : null);
-      if (!AC) return;
-      audioCtx = new AC();
-    }
-    const t = audioCtx.currentTime + (when || 0);
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type || "square";
-    o.frequency.value = freq;
-    g.gain.setValueAtTime(vol || 0.04, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(audioCtx.destination);
-    o.start(t);
-    o.stop(t + dur);
-  } catch (e) { /* audio is a luxury, never a crash */ }
-}
-
-const sfx = {
-  click:   () => tone(440, 0.06, "square", 0.025),
-  scroll:  () => { tone(523, 0.12, "triangle", 0.05); tone(659, 0.12, "triangle", 0.05, 0.12); tone(784, 0.2, "triangle", 0.05, 0.24); },
-  danger:  () => { tone(196, 0.18, "sawtooth", 0.04); tone(147, 0.25, "sawtooth", 0.04, 0.15); },
-  coin:    () => { tone(988, 0.07, "square", 0.03); tone(1319, 0.1, "square", 0.03, 0.06); },
-  arrive:  () => { tone(392, 0.1, "triangle", 0.04); tone(523, 0.15, "triangle", 0.04, 0.1); }
-};
+// (sound effects and the music engine live in js/audio.js)
 
 // --- helpers -------------------------------------------------
 
@@ -677,13 +644,8 @@ function render(t) {
       travelTimer -= DAY_MS;
       travelDayTick();
     }
-    // ambient road music: soft pentatonic plucks in caravan time
-    if (audioCtx && !muted && frame % 52 === 0) {
-      const scale = [220, 261.6, 293.7, 349.2, 392, 440];
-      tone(scale[Math.floor(Math.random() * scale.length)], 0.5, "triangle", 0.015);
-      if (Math.random() < 0.3) tone(110, 0.7, "sine", 0.012, 0.1);
-    }
   }
+  updateMusic(mode);
 
   ctx.clearRect(0, 0, 320, 180);
   const animFrame = Math.floor(frame / 9);
@@ -739,8 +701,7 @@ document.getElementById("btn-codex").onclick = showCodex;
 document.getElementById("btn-map").onclick = showMap;
 document.getElementById("btn-journal").onclick = showJournal;
 document.getElementById("btn-sound").onclick = function () {
-  muted = !muted;
-  this.textContent = "Sound: " + (muted ? "off" : "on");
+  this.textContent = toggleSound();
 };
 
 if (document.addEventListener) {

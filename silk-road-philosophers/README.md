@@ -1,6 +1,6 @@
 # The Silk Road of Ideas 🐫📜
 
-**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.**
+**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v1.0)*
 
 The year is 100 BCE. The Han emperor's envoys have opened the roads west, and for the
 first time in history one connected route runs from **Chang'an to Rome**. You are a
@@ -37,8 +37,9 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
   carry; answering well earns insight and a listener's tip in silver.
 - The game **auto-saves** at every city and camp — close the tab and continue later
   from the title screen. (Death erases the save. The road is honest that way.)
-- Procedural **sound effects and ambient road music** via WebAudio — no audio files;
-  mute button in the footer.
+- A full **procedural soundtrack** via WebAudio — no audio files at all. Six generative
+  themes (title, travel, city, dialogue, victory, defeat) follow the game's mood, over
+  synthesized sound effects. The footer button cycles music+sfx → sfx only → silent.
 - A **travel journal** chronicles your whole journey — every city, choice, and scroll —
   readable any time and at journey's end.
 - **Keyboard controls**: 1–9 select choices; C, M, J open the Codex, Map, and Journal.
@@ -73,9 +74,11 @@ there are zero image assets. The whole game is four small files:
 ```
 index.html      shell & layout
 style.css       pixel-era styling
-js/data.js      cities, dialogues, events — the educational content
+js/data.js      cities, dialogues, events, quizzes — the educational content
 js/sprites.js   procedural pixel art renderer
+js/audio.js     sound effects + generative music engine (WebAudio)
 js/game.js      state machine & game loop
+test/smoke.js   headless test: plays the entire game end to end (node test/smoke.js)
 ```
 
 ## A note on history

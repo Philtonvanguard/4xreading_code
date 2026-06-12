@@ -44,7 +44,7 @@ global.localStorage = {
 };
 
 let src = "";
-for (const f of ["js/data.js", "js/sprites.js", "js/game.js"]) {
+for (const f of ["js/data.js", "js/sprites.js", "js/audio.js", "js/game.js"]) {
   src += fs.readFileSync(path + f, "utf8") + "\n";
 }
 // expose internals for the test
@@ -57,7 +57,8 @@ module.exports = {
   ui, applyEffect, closeOverlay, showMap, showTitle,
   triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES,
   TOTAL_CONNECTIONS, DIFFICULTIES, chooseDifficulty,
-  CITY_BY_ID, DEFAULT_ROUTE, DETOUR, currentLeg, showJournal
+  CITY_BY_ID, DEFAULT_ROUTE, DETOUR, currentLeg, showJournal,
+  TRACKS, MOODS, toggleSound, updateMusic, get soundMode() { return soundMode; }
 };
 `;
 const mod = { exports: {} };
@@ -236,6 +237,24 @@ game.newGame(); // no arg falls back to merchant
 assert(game.G.silver === game.DIFFICULTIES.merchant.start.silver, "default difficulty is merchant");
 game.chooseDifficulty();
 assert(ui.choices.children.length === 4, "difficulty screen offers 3 paths + back");
+
+// ---- audio: tracks well-formed, every mode has a mood, toggle cycles ----
+for (const name of Object.keys(game.TRACKS)) {
+  const t = game.TRACKS[name];
+  assert(t.tempo > 0 && t.steps.length > 0, "track " + name + " well-formed");
+  for (const step of t.steps) {
+    if (step === null) continue;
+    for (const [f, d] of step) assert(f > 20 && f < 2000 && d > 0, "sane note in " + name);
+  }
+}
+for (const m of ["TITLE","TRAVEL","CAMP","EVENT","CITY","MARKET","DIALOGUE","CODEX","MAP","JOURNAL","VICTORY","GAMEOVER"]) {
+  assert(game.MOODS[m], "mood defined for mode " + m);
+}
+assert(game.soundMode === "full", "starts at full sound");
+assert(game.toggleSound() === "Sound: sfx only", "toggle to sfx");
+assert(game.toggleSound() === "Sound: off", "toggle to off");
+assert(game.toggleSound() === "Sound: music+sfx", "toggle back to full");
+game.updateMusic("TRAVEL"); // no AudioContext headless: must not throw
 
 // ---- death clears the save ----
 game.newGame();
