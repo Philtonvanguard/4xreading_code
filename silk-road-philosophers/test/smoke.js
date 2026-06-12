@@ -57,7 +57,7 @@ module.exports = {
   ui, applyEffect, closeOverlay, showMap, showTitle,
   triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES,
   TOTAL_CONNECTIONS, DIFFICULTIES, chooseDifficulty,
-  CITY_BY_ID, DEFAULT_ROUTE, DETOUR, currentLeg
+  CITY_BY_ID, DEFAULT_ROUTE, DETOUR, currentLeg, showJournal
 };
 `;
 const mod = { exports: {} };
@@ -148,6 +148,13 @@ game.closeOverlay();
 game.showMap();
 assert(game.mode === "MAP", "map opens");
 game.closeOverlay();
+game.showJournal();
+assert(game.mode === "JOURNAL", "journal opens");
+assert(ui.text.innerHTML.includes("Reached"), "journal records arrivals");
+assert(ui.text.innerHTML.includes("recorded"), "journal records scrolls");
+assert(game.G.journal.length >= 15, "journal has a full chronicle, got " + game.G.journal.length);
+game.closeOverlay();
+assert(game.mode === "VICTORY", "journal returns to victory screen");
 
 // every event resolvable with every choice without crashing
 for (const ev of game.EVENTS) {

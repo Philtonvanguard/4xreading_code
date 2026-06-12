@@ -51,8 +51,15 @@ function newGame(diffKey) {
     met: {},
     soldAt: {},
     askedQuiz: {},
+    journal: [],
     causeOfEnd: ""
   });
+}
+
+function journal(text) {
+  if (!G.journal) G.journal = [];
+  G.journal.push("Day " + G.day + " — " + text);
+  if (G.journal.length > 99) G.journal.shift();
 }
 
 // --- save / load ---------------------------------------------
@@ -192,7 +199,7 @@ function showTitle() {
   }
   addChoice("⟶  Begin " + (save ? "a new" : "the") + " journey", chooseDifficulty);
   addChoice("?   How to play", showHelp);
-  ui.hint.textContent = "an Oregon Trail–like for the history of ideas";
+  ui.hint.textContent = "keys: 1–9 choose · C/M/J panels";
 }
 
 function chooseDifficulty() {
@@ -225,10 +232,11 @@ function showHelp() {
 function arriveAtCity(first) {
   mode = "CITY";
   G.legDist = 0;
+  const c = city();
+  journal(first ? "The journey begins in " + c.name + "." : "Reached " + c.name + ".");
   updateStats();
   saveGame();
   sfx.arrive();
-  const c = city();
   setSpeaker(c.name.toUpperCase() + " — " + c.region);
   setText(c.intro + (first ? "\n\nSeek out the local thinkers before you depart — every scroll you carry makes the journey worth more." : ""));
   cityMenu();
@@ -261,6 +269,7 @@ function cityMenu() {
       () => {
         G.route.splice(G.cityIndex + 1, 0, DETOUR.via);
         G.legOverrides[G.cityIndex] = DETOUR.leg;
+        journal("Chose the southern road over the high passes to " + via.name + ".");
         startTravel();
       });
   } else {
@@ -322,6 +331,7 @@ function finishDialogue() {
   mode = "CITY";
   G.met[dialogue.pid] = true;
   G.scrolls.push(p.connection);
+  journal("Met " + p.name + " and recorded “" + p.connection.title + "”.");
   updateStats();
   saveGame();
   sfx.scroll();
@@ -489,6 +499,8 @@ function triggerQuiz() {
   clearChoices();
   quiz.options.forEach((opt, i) => {
     addChoice("» " + opt, () => {
+      journal(i === quiz.correct ? "Answered a campfire question well; earned a listener's tip."
+                                 : "Fumbled a campfire question; an old pilgrim set me right.");
       if (i === quiz.correct) {
         applyEffect({ insight: 3, silver: 8 });
         sfx.coin();
@@ -531,6 +543,7 @@ function triggerEvent() {
     addChoice("» " + ch.label, () => {
       applyEffect(ch.effect);
       if (G.health <= 0) return; // gameOver already shown
+      journal(ev.title + " · " + ch.label);
       setText(ch.result);
       clearChoices();
       addChoice("⟶  Continue on", () => { currentEvent = null; startTravel(); });
@@ -540,12 +553,20 @@ function triggerEvent() {
 
 // --- CODEX & MAP overlays ------------------------------------
 
-function showCodex() {
-  if (mode === "CODEX") return closeOverlay();
-  if (mode === "EVENT") return; // no reading by lamplight while bandits wait
+const OVERLAYS = ["CODEX", "MAP", "JOURNAL"];
+
+// Common overlay entry; returns false if overlays are unavailable right now.
+function enterOverlay(name) {
+  if (mode === name) { closeOverlay(); return false; }
+  if (mode === "EVENT") return false; // no reading by lamplight while bandits wait
   if (mode === "TRAVEL") pauseTravel();
-  if (mode !== "MAP") returnMode = mode; // stacked overlays keep the original return point
-  mode = "CODEX";
+  if (!OVERLAYS.includes(mode)) returnMode = mode; // stacked overlays keep the original return point
+  mode = name;
+  return true;
+}
+
+function showCodex() {
+  if (!enterOverlay("CODEX")) return;
   setSpeaker("THE CODEX OF CONNECTIONS — " + (G ? G.scrolls.length : 0) + " of " + TOTAL_CONNECTIONS + " threads found");
   if (!G || G.scrolls.length === 0) {
     setText("The codex is empty. Seek out the philosophers in each city — every completed dialogue records a thread of connection between the world's traditions.");
@@ -560,16 +581,26 @@ function showCodex() {
 }
 
 function showMap() {
-  if (mode === "MAP") return closeOverlay();
-  if (mode === "EVENT") return;
-  if (mode === "TRAVEL") pauseTravel();
-  if (mode !== "CODEX") returnMode = mode;
-  mode = "MAP";
+  if (!enterOverlay("MAP")) return;
   setSpeaker("THE ROAD SO FAR");
   setText(G ? "From Chang'an to Rome is more than ten thousand li. Every dot is a world; every line between them is a conversation."
             : "Begin the journey to chart your road.");
   clearChoices();
   addChoice("⟵  Close map", closeOverlay);
+}
+
+function showJournal() {
+  if (!enterOverlay("JOURNAL")) return;
+  setSpeaker("YOUR TRAVEL JOURNAL");
+  const entries = G && G.journal ? G.journal : [];
+  if (!entries.length) {
+    setText("The journal is blank. The road will fill it.");
+  } else {
+    ui.text.innerHTML = entries.slice().reverse().map(e =>
+      '<div class="codex-entry"><p>' + e + '</p></div>').join("");
+  }
+  clearChoices();
+  addChoice("⟵  Close journal", closeOverlay);
 }
 
 function closeOverlay() {
@@ -602,7 +633,8 @@ function gameOver(text) {
     "   ·   Connections found: " + G.scrolls.length + " of " + TOTAL_CONNECTIONS +
     "\n\nBut ideas do not die with their carriers. Someone will find your scrolls.");
   clearChoices();
-  addChoice("↻  Begin a new journey", () => { newGame(); arriveAtCity(true); });
+  addChoice("✎  Read your travel journal", showJournal);
+  addChoice("↻  Begin a new journey", chooseDifficulty);
   addChoice("⟵  Title screen", showTitle);
 }
 
@@ -628,7 +660,8 @@ function showVictory() {
   );
   clearChoices();
   addChoice("✦  Read your Codex of Connections", showCodex);
-  addChoice("↻  Travel the road again", () => { newGame(); arriveAtCity(true); });
+  addChoice("✎  Read your travel journal", showJournal);
+  addChoice("↻  Travel the road again", chooseDifficulty);
 }
 
 // --- RENDER LOOP ---------------------------------------------
@@ -643,6 +676,12 @@ function render(t) {
     while (travelTimer >= DAY_MS && mode === "TRAVEL") {
       travelTimer -= DAY_MS;
       travelDayTick();
+    }
+    // ambient road music: soft pentatonic plucks in caravan time
+    if (audioCtx && !muted && frame % 52 === 0) {
+      const scale = [220, 261.6, 293.7, 349.2, 392, 440];
+      tone(scale[Math.floor(Math.random() * scale.length)], 0.5, "triangle", 0.015);
+      if (Math.random() < 0.3) tone(110, 0.7, "sine", 0.012, 0.1);
     }
   }
 
@@ -674,12 +713,12 @@ function render(t) {
       drawMapScene(ctx, G ? G.route : DEFAULT_ROUTE, G ? G.cityIndex : 0, fracDone);
       break;
     }
-    case "CODEX": {
+    case "CODEX": case "JOURNAL": {
       drawSkyGradient(ctx, SKY.night);
       drawStars(ctx, 31);
       ctx.fillStyle = "#e2b94c";
       ctx.font = "12px monospace";
-      ctx.fillText("✦ the codex of connections ✦", 80, 90);
+      ctx.fillText(mode === "CODEX" ? "✦ the codex of connections ✦" : "✎ the travel journal ✎", 80, 90);
       break;
     }
     case "VICTORY":
@@ -698,10 +737,23 @@ function render(t) {
 
 document.getElementById("btn-codex").onclick = showCodex;
 document.getElementById("btn-map").onclick = showMap;
+document.getElementById("btn-journal").onclick = showJournal;
 document.getElementById("btn-sound").onclick = function () {
   muted = !muted;
   this.textContent = "Sound: " + (muted ? "off" : "on");
 };
+
+if (document.addEventListener) {
+  document.addEventListener("keydown", e => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key >= "1" && e.key <= "9") {
+      const b = ui.choices.children[+e.key - 1];
+      if (b && !b.disabled) { e.preventDefault(); b.onclick(); }
+    } else if (e.key === "c" || e.key === "C") showCodex();
+    else if (e.key === "m" || e.key === "M") showMap();
+    else if (e.key === "j" || e.key === "J") showJournal();
+  });
+}
 
 showTitle();
 requestAnimationFrame(render);

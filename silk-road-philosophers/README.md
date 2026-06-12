@@ -37,7 +37,11 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
   carry; answering well earns insight and a listener's tip in silver.
 - The game **auto-saves** at every city and camp — close the tab and continue later
   from the title screen. (Death erases the save. The road is honest that way.)
-- Procedural **sound effects** via WebAudio — no audio files; mute button in the footer.
+- Procedural **sound effects and ambient road music** via WebAudio — no audio files;
+  mute button in the footer.
+- A **travel journal** chronicles your whole journey — every city, choice, and scroll —
+  readable any time and at journey's end.
+- **Keyboard controls**: 1–9 select choices; C, M, J open the Codex, Map, and Journal.
 
 ## Who you'll meet
 

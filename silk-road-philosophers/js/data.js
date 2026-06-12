@@ -831,6 +831,58 @@ const EVENTS = [
     ]
   },
   {
+    id: "pirates", terrain: ["sea"], weight: 10,
+    title: "Pirates off Cyprus",
+    text: "A lean galley angles out of a cove, oars beating fast. The captain curses Rome, Cilicia, and the gods of weather in one breath.",
+    choices: [
+      { label: "Offer the pirates a toll from your purse. (-25 silver)",
+        effect: { silver: -25 },
+        result: "Their boarding officer is businesslike — tolls are cheaper than fights for everyone, which is exactly the problem. You sail on, lighter and unhurt." },
+      { label: "Help the crew run for it — every hand on the lines.",
+        effect: { health: -6, days: 1, insight: 1 },
+        result: "A whole day of frantic sailing loses them at dusk. Your palms are rope-burned and your shoulders ruined, but the captain shares his wine and his pirate stories, which improve with each cup." }
+    ]
+  },
+  {
+    id: "monastery", terrain: ["mountain"], weight: 9,
+    title: "A mountain shrine",
+    text: "Clinging to the cliff above the pass: a tiny shrine, half cave, half masonry, tended by two monks of no order you recognize. They wave you up.",
+    choices: [
+      { label: "Climb up and accept their hospitality.",
+        effect: { days: 1, health: 8, insight: 2 },
+        result: "Barley tea, a brazier, and a night of talk in three broken languages. The shrine holds a Greek lamp, an Indian bell, and a Chinese coin — left by travelers like you, going both ways." },
+      { label: "Wave back and keep moving while the light holds.",
+        effect: {},
+        result: "Sensible — passes punish the slow. Their bell follows you down the trail for a kilometer, marking time you didn't lose." }
+    ]
+  },
+  {
+    id: "mirage", terrain: ["desert"], weight: 8,
+    title: "A city that isn't there",
+    text: "Towers and palm groves shimmer on the horizon — beautiful, detailed, and exactly where no city should be. Your driver spits: 'The desert dreams out loud.'",
+    choices: [
+      { label: "Trust the map, not your eyes. Press on.",
+        effect: { insight: 2 },
+        result: "An hour later the towers dissolve. You note it in your scrolls: the senses report, but judgment decides — half the philosophers you've met would claim this proves their point." },
+      { label: "Detour toward it, just in case.",
+        effect: { days: 1, water: -3 },
+        result: "The city retreats as you advance, then vanishes with a shimmer like a fish turning. A day and three waterskins, paid as tuition. The Skeptics would be insufferable about this." }
+    ]
+  },
+  {
+    id: "burned_inn", terrain: ["steppe", "desert"], weight: 7,
+    title: "A burned caravanserai",
+    text: "The walls still stand, but the gates are charcoal and the well is fouled. A handful of survivors picks through the yard — a raid, two nights ago.",
+    choices: [
+      { label: "Share your food and help them dig out the well. (-4 food)",
+        effect: { food: -4, days: 1, insight: 2 },
+        result: "By dusk the well runs clean and a child has stopped crying. An old woman presses a worn blessing-token into your hand. Every philosophy you carry agrees on what you just did; that agreement is worth noting." },
+      { label: "You can't feed everyone. Move on.",
+        effect: {},
+        result: "You ride past with your eyes ahead. It is the rational choice, and it sits in your stomach like a stone for two days anyway. Wisdom and comfort are not the same cargo." }
+    ]
+  },
+  {
     id: "becalmed", terrain: ["sea"], weight: 10,
     title: "Becalmed",
     text: "The wind dies completely. The sail hangs like a curtain in an empty house. The captain shrugs the shrug of ten thousand years of sailing.",
