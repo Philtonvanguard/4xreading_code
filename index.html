@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Silk Road of Ideas — A Philosopher's Journey</title>
+<meta name="description" content="An Oregon Trail–style 2D pixel game set in 100 BCE: travel the Silk Road from Chang'an to Rome as a wandering philosopher and discover how the world's great philosophies are interconnected.">
+<meta name="theme-color" content="#14100c">
+<meta property="og:title" content="The Silk Road of Ideas — A Philosopher's Journey">
+<meta property="og:description" content="Travel the Silk Road circa 100 BCE, survive the road, and collect the 17 real historical threads connecting the world's philosophies.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="frame">
+  <header id="titlebar">
+    <span class="t-gold">THE SILK ROAD OF IDEAS</span>
+    <span class="t-dim">a philosopher's journey &middot; c. 100 BCE</span>
+  </header>
+
+  <div id="statsbar" class="hidden">
+    <span class="stat" id="st-day"></span>
+    <span class="stat" id="st-food"></span>
+    <span class="stat" id="st-water"></span>
+    <span class="stat" id="st-silver"></span>
+    <span class="stat" id="st-health"></span>
+    <span class="stat" id="st-camels"></span>
+    <span class="stat t-gold" id="st-insight"></span>
+    <span class="stat t-jade" id="st-scrolls"></span>
+  </div>
+
+  <canvas id="scene" width="320" height="180"></canvas>
+
+  <div id="panel">
+    <div id="speaker" class="hidden"></div>
+    <div id="text"></div>
+    <div id="choices"></div>
+  </div>
+
+  <footer id="footbar">
+    <button class="footbtn" id="btn-codex">Codex (C)</button>
+    <button class="footbtn" id="btn-map">Map (M)</button>
+    <button class="footbtn" id="btn-journal">Journal (J)</button>
+    <button class="footbtn" id="btn-sound">Sound: music+sfx</button>
+    <span class="t-dim" id="foot-hint"></span>
+  </footer>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
