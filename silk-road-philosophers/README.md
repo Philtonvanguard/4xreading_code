@@ -1,6 +1,6 @@
 # The Silk Road of Ideas 🐫📜
 
-**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v1.0)*
+**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v2.0)*
 
 The year is 100 BCE. The Han emperor's envoys have opened the roads west, and for the
 first time in history one connected route runs from **Chang'an to Rome**. You are a
@@ -14,13 +14,24 @@ Just open `index.html` in any modern browser — no build step, no dependencies,
 
 To host it for free with GitHub Pages: **Settings → Pages → Deploy from branch → main → / (root)**.
 
+## Three ways to play
+
+- 🐫 **The Journey** — the classic road, at your own pace, on your chosen difficulty.
+- 🐎 **The Imperial Envoy** — the Han court gives you 85 days to reach Rome. Well
+  funded, badly hurried; every detour, rest day and windless sea costs you.
+- 🍷 **The Symposium** — no road, pure wits: every question the road can ask, three
+  lives, streak scoring, and the real historical Connection revealed after each answer.
+
 ## How to play
 
 - **Travel** the stations of the Silk Road: Chang'an → Dunhuang → Kashgar →
   Samarkand → Merv → Ctesiphon → Palmyra → Antioch → Rome.
-- At Kashgar, choose your road: the direct northern route, or the **southern detour
-  over the Karakoram to Taxila** — the great crossroads university city. Only
-  travelers who brave the detour can collect every Connection.
+- The road forks twice: at Kashgar, the **southern detour over the Karakoram to
+  Taxila**, the crossroads university city — and at Antioch, the **sea detour to
+  Alexandria** and its Library. Only travelers who brave both can collect every
+  Connection.
+- **Achievements** and best scores persist across runs — see the Hall of Records
+  on the title screen.
 - Every day on the road consumes **food** and **water**; running out drains your
   **health**. Sandstorms, bandits, fevers, mountain passes and storms at sea will
   test your judgment (sometimes philosophy *is* the best weapon).
@@ -29,7 +40,7 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
   showing how that tradition links to the others.
 - Buy supplies at the **market** — or copy and sell your scrolls to local scribes,
   spreading the ideas *and* funding the trip (this is genuinely how wisdom traveled).
-- **Reach Rome alive** with as many of the 17 Connections as you can.
+- **Reach Rome alive** with as many of the 23 Connections as you can.
 - Pick a **difficulty** at the start: the Scholar's Stroll, the Merchant's Road, or
   the Ascetic's Path (thin silver, harsher roads).
 - Choose your **pace** on the road — easy, steady, or swift — trading speed against health.
@@ -50,20 +61,26 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
 |---|---|---|
 | Chang'an | A Confucian scholar | The Golden Rule appears independently East and West |
 | Chang'an | A Daoist hermit | *Wu wei* and the Stoic "life according to nature" |
+| Chang'an | Sima Qian, Grand Historian | Writing the neighbors in: history invented at both ends of the earth |
 | Dunhuang | A Gandharan monk | Buddhism spread by caravan; Greco-Buddhist art |
 | Dunhuang | A Mohist engineer | Universal love & China's parallel invention of logic |
 | Kashgar | A Sogdian merchant | Translators were the road's invisible philosophers |
+| Kashgar | A Parthian lay Buddhist | The Parthian Bridge: Persia *carried* ideas, not just goods |
 | Taxila ⛰ | A Jain muni | The blind men & the elephant — and ahimsa's 2,000-year relay |
 | Taxila ⛰ | A Pāṇinian grammarian | The sister languages: Sanskrit, Greek, Persian, one cradle |
 | Samarkand | A Zoroastrian priest | Persian seeds in Western ideas of judgment & paradise |
 | Samarkand | A Brahmin gem-trader | *Tat tvam asi*: India's One and Greece's One |
 | Merv | A Greco-Bactrian | The Greek king who debated a Buddhist monk (Milindapañhā) |
+| Merv | A teller of beast-fables | The Panchatantra's passport: one jackal, every language |
 | Ctesiphon | A Babylonian astronomer | One sky: Babylonian math under everyone's science |
 | Ctesiphon | An Epicurean of Seleucia | Atomism arose twice — in Greece and in India |
 | Palmyra | A Skeptic merchant | Pyrrho's Greek doubt may carry an Indian passport |
 | Palmyra | A student of Hillel | The whole Law on one foot — Confucius' rule, again |
 | Antioch | A Stoic teacher | "Citizen of the cosmos" — and its Eastern twins |
 | Antioch | A Cynic of the colonnades | Alexander's Cynic met India's naked sages — and saw Diogenes |
+| Alexandria ⚓ | An under-librarian | The World's Backup: Eratosthenes and the Library's mixtures |
+| Alexandria ⚓ | Melissa, philosopher | The Unrecorded Half: women taught in every tradition |
+| Rome | Lucretius, Epicurean poet | The poem that slept a thousand years and woke the Renaissance |
 | Rome | A curious senator | No center, only crossroads |
 
 ## Tech

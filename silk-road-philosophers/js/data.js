@@ -14,7 +14,7 @@ const CITIES = [
     distToNext: 1700,
     intro: "Capital of the Han dynasty. Bells ring from the imperial academy, where scholars debate how Heaven and humanity are woven together. Your caravan waits at the western gate.",
     sky: "dawn",
-    philosophers: ["dong", "hermit"]
+    philosophers: ["dong", "hermit", "simaqian"]
   },
   {
     id: "dunhuang",
@@ -34,7 +34,7 @@ const CITIES = [
     distToNext: 900,
     intro: "Where the desert roads reunite. A dozen languages fill the bazaar. Everything passes through Kashgar: silk, jade, horses — and ideas.",
     sky: "day",
-    philosophers: ["sogdian"]
+    philosophers: ["sogdian", "anyuan"]
   },
   {
     id: "taxila",
@@ -65,7 +65,7 @@ const CITIES = [
     distToNext: 1300,
     intro: "A green island in the Karakum sands. Greek is still spoken here, two centuries after Alexander. In the agora, a philosopher argues with anyone who will listen.",
     sky: "day",
-    philosophers: ["bactrian"]
+    philosophers: ["bactrian", "fabulist"]
   },
   {
     id: "ctesiphon",
@@ -98,6 +98,17 @@ const CITIES = [
     philosophers: ["stoic", "cynic"]
   },
   {
+    id: "alexandria",
+    name: "Alexandria",
+    region: "Ptolemaic Egypt — the sea detour",
+    optional: true,
+    terrainToNext: "sea",
+    distToNext: 2000,
+    intro: "The Pharos lighthouse burns above the harbor, and behind it stands the Library — half a million scrolls, and clerks who board every docked ship to copy the books aboard. This city is trying to remember everything.",
+    sky: "day",
+    philosophers: ["librarian", "arete"]
+  },
+  {
     id: "rome",
     name: "Rome",
     region: "Italy",
@@ -105,7 +116,7 @@ const CITIES = [
     distToNext: 0,
     intro: "The center of the western world. You have crossed mountains, deserts and the sea. Everything you carry — every scroll, every conversation — has arrived with you.",
     sky: "dawn",
-    philosophers: ["senator"]
+    philosophers: ["lucretius", "senator"]
   }
 ];
 
@@ -213,6 +224,204 @@ const PHILOSOPHERS = {
       title: "Buddhism Rides the Caravans",
       text: "Buddhism spread from India to China not by conquest but by commerce — monasteries grew along Silk Road oases like Dunhuang, doubling as rest-houses for merchants. In Gandhara (modern Pakistan/Afghanistan), Greek settlers left by Alexander's conquests carved the first human images of the Buddha in Hellenistic style: Greco-Buddhist art, a literal fusion of Athens and India.",
       route: "India → Gandhara → Dunhuang → China"
+    }
+  },
+
+  simaqian: {
+    name: "Sima Qian",
+    title: "Grand Historian of the Han court",
+    portrait: { skin: "#e8b88a", robe: "#3a3a55", hat: "scholar", beard: "#333333" },
+    nodes: [
+      {
+        text: "So you go west, where our envoy Zhang Qian went. I interviewed the men who returned; their reports are in my records, beside the annals of emperors and the songs of peasants. My father charged me on his deathbed to finish our history, and I have paid... a great price to keep that promise. Tell me — why should a man give everything to write down what is already over?",
+        choices: [
+          { label: "Because the past is not over — it is the road the present stands on.", insight: 3,
+            reply: "Yes. I write, as I have said, to examine the border between heaven and humanity, and to thread the changes of past and present into ONE account. Ten thousand events, one thread. A man who knows how the road was laid does not wander off it so easily." },
+          { label: "For fame — historians outlive emperors.", insight: 2,
+            reply: "Ha! You are not wholly wrong; the First Emperor burned books to be remembered his way, and now he is remembered mine. But fame is a byproduct. The work is the debt — to my father, and to everyone whose deeds would otherwise dissolve like breath in winter." },
+          { label: "No reason. The dead don't read.", insight: 1,
+            reply: "The dead don't read — the unborn do. Every custom you will meet on that road is a message from people who never met you. Refuse to write, and you rob your grandchildren the way silence robbed you." }
+        ]
+      },
+      {
+        text: "In my records I have set down not only our own kings but the Xiongnu of the steppe, the states of Ferghana and Parthia — peoples my colleagues call barbarians and therefore beneath history. I disagree. Do you know why?",
+        choices: [
+          { label: "Because one history with pieces missing is a lie of a special kind.", insight: 3,
+            reply: "Precisely. A historian who records only his own people writes a room and calls it the world. The Xiongnu shaped us as the anvil shapes the blade; leave them out and even OUR story stops making sense. Whatever you find in the west, traveler — write it down. Someone must." },
+          { label: "Because barbarian wars decide our taxes.", insight: 2,
+            reply: "Spoken like a clerk of the treasury — and true, as far as it goes. But follow your own logic: if their wars decide our taxes, their story is already inside our story. 'Barbarian' is just the word for a neighbor we haven't recorded yet." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Historians' Pact",
+      text: "Sima Qian (c. 145–86 BCE) wrote the Shiji in exactly this era — 130 chapters threading emperors, merchants, assassins and foreign peoples into one connected record, including our best account of Zhang Qian's journeys that opened the Silk Road. Far west, Herodotus had done the same for Greece and Persia, and Polybius was arguing that history had become 'an organic whole.' Three traditions independently invented the same radical act: writing the neighbors in.",
+      route: "Chang'an ↔ Halicarnassus — one craft, two ends of the earth"
+    }
+  },
+
+  anyuan: {
+    name: "An Yuan",
+    title: "Parthian trader and lay student of the Dharma",
+    portrait: { skin: "#d9a06b", robe: "#7d5a3a", hat: "cap", beard: "#332211" },
+    nodes: [
+      {
+        text: "You look surprised — a Parthian, in Persian boots, speaking of the Buddha? Friend, my caravans winter in Gandhara. Ten seasons of listening at the monastery gate, and the teaching climbed into my saddlebags with the rest of the cargo. Here is what I use most, out on the road: watching the breath. Guess why.",
+        choices: [
+          { label: "A frightened mind, like a bolting horse, needs a rein it can feel.", insight: 3,
+            reply: "Exactly that! When bandit-dust rises on the horizon, my men reach for knives and I count ten breaths first. The monks call it anapanasati. I call it the only cargo that lightens the more you use it. Fear makes decisions in your body before your mind is consulted; the breath gets there first." },
+          { label: "Breathing is free, and Parthians love a bargain.", insight: 2,
+            reply: "Ha! I will not deny it. But mark the deeper bargain: every other remedy for fear must be bought, carried, and guarded. This one is minted fresh in your own chest, anywhere on earth. Even a robbed man still owns it." },
+          { label: "Monks have nothing better to do than breathe.", insight: 1,
+            reply: "So I sneered too, once. Then I watched a monk sit unmoved while a sandstorm buried his tent to the waist, and dig himself out humming. Idleness does not look like that. That looks like a man who has stopped being his own worst weather." }
+        ]
+      },
+      {
+        text: "My dream is this: to carry these sutras all the way into Han China and put them into Chinese words. My partners laugh — a Persian, translating India for China! But tell me honestly: who else CAN do it?",
+        choices: [
+          { label: "Only the middleman — he's the one who speaks to both ends.", insight: 3,
+            reply: "Yes! The ends of the road know only themselves; we in the middle are fluent in everyone. Remember this when scholars someday praise the wisdom of 'the East' or 'the West' — half of every teaching's journey was made on the backs of people from in between, whose names the scrolls forget." },
+          { label: "Wait for an Indian monk to learn Chinese.", insight: 2,
+            reply: "He may come — but he will lodge with a Parthian, hire Sogdian guides, and check his Chinese against a Kashgari innkeeper's. Alone, no one crosses this road; the translation, like the journey, is a caravan." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Parthian Bridge",
+      text: "The first person known to translate Buddhist scriptures into Chinese was not Indian or Chinese but Parthian: An Shigao, a Persian noble (tradition says a prince who renounced his throne), working in Luoyang in the 2nd century CE — the fulfilment of exactly the road our trader dreams of here. Persia is remembered as a place ideas passed through; it was also a place that carried them, shaped them, and delivered them by hand.",
+      route: "Parthia → Gandhara → Luoyang"
+    }
+  },
+
+  fabulist: {
+    name: "Kavi",
+    title: "teller of beast-fables",
+    portrait: { skin: "#c98850", robe: "#a05a2a", hat: "wrap", beard: "#442200" },
+    nodes: [
+      {
+        text: "Sit, sit — the fire is paid for by stories here. In my satchel I carry a book of fables from India: jackals who counsel lions, doves who out-think fowlers, a mongoose slain by a hasty master. It was written, they say, to teach three idiot princes statecraft in six months. Now riddle me this: why put wisdom in the mouths of animals?",
+        choices: [
+          { label: "Because a king will swallow advice from a jackal that he'd behead a man for.", insight: 3,
+            reply: "HA! You have eaten at court, I think! Just so: the fable is armor for the truth-teller. 'Sire, a certain lion once trusted a certain jackal...' — and the king laughs, and hears it, and no one is executed. Half the world's honest advice has had to grow fur and walk on four legs to survive." },
+          { label: "Children listen better to talking animals.", insight: 2,
+            reply: "True — and do not say it too loudly, but kings and children are much alike as audiences. Yet notice: the children grow up with the jackal's cunning and the dove's teamwork already folded into them. A fable is philosophy that gets in before the guards are posted." },
+          { label: "Because animals can't sue for slander.", insight: 2,
+            reply: "Ho! A lawyer's answer, and not wrong — every fat vizier in the world has scowled at a story about a greedy crow and been unable to prove a thing. The fable is the poor man's court of appeal. Verdict delivered nightly, at every fire on this road." }
+        ]
+      },
+      {
+        text: "Here is the marvel, friend. I told my mongoose story in Merv, and a Greek trader jumped up: 'We have that tale — with a dog!' A Persian swore it was his grandmother's, with a weasel. Same story, three coats. What is going on?",
+        choices: [
+          { label: "Stories travel lighter than any cargo — and change coats at every border.", insight: 3,
+            reply: "Yes! Silk frays, coins are clipped, but a good story crosses every checkpoint hidden inside a traveler's skull, pays no duty, and tailors itself a local coat by morning. Long after every empire on this road has fallen, the jackals will still be talking. I would bet my satchel on it." },
+          { label: "Obviously the Greek stole it from you.", insight: 1,
+            reply: "Or my grandmother stole it from HIS! Friend, chasing a story's true owner is like arresting the wind for trespassing. Better to marvel: three peoples, one tale, and each is certain it was born by their own fire. That certainty — that a traveled thing is native — is the road's oldest joke." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Fables' Passport",
+      text: "The Panchatantra — India's fable-book for the education of princes — became one of the most-traveled books in history: into Persian (as Kalila wa-Dimna), then Arabic, Syriac, Hebrew, Greek and Latin, feeding fable traditions all the way to La Fontaine. Aesop's beasts made the same journey in reverse. When a talking fox appears in any language on earth, its passport has stamps from three continents.",
+      route: "India → Persia → Baghdad → Europe"
+    }
+  },
+
+  librarian: {
+    name: "Sosigenes",
+    title: "under-librarian of the Great Library",
+    portrait: { skin: "#e8c098", robe: "#3f6d8a", hat: "none", beard: "#555555" },
+    nodes: [
+      {
+        text: "Mind the ink, please — these are ships' copies, seized this morning. Library law: every vessel in harbor surrenders its books for copying; the captain gets the copy back and we keep the original. Piracy, the captains call it. Preservation, we reply. Now — you've crossed the whole road. Answer me this: how large is the earth you crossed?",
+        choices: [
+          { label: "I hear a man here measured it — with a well and a shadow.", insight: 3,
+            reply: "Eratosthenes, my predecessor! At summer solstice the sun strikes the bottom of a well at Syene — no shadow. Here in Alexandria, at the same hour, a pillar casts a shadow of about one-fiftieth of a circle. One number from Egypt's surveyors, distance Syene-to-Alexandria; one from geometry; and the earth's whole belt falls out of the arithmetic: about 250,000 stades. He measured the world without leaving the city — because the world's knowledge had already come to him." },
+          { label: "Too large to measure — I walked it, I should know.", insight: 2,
+            reply: "Your feet say infinite; geometry disagrees! Eratosthenes computed the earth's circumference from a well at Syene, a shadow here, and the surveyed distance between — about 250,000 stades. Your entire heroic journey, friend, is a modest arc on a very knowable sphere. Does that diminish the walk, or dignify the mathematics? I have never decided." },
+          { label: "Why would the size of the earth matter to anyone?", insight: 1,
+            reply: "Spoken like a man who has never funded a grain fleet! Every helmsman, tax-assessor and general in Egypt wants that number. But grant the deeper point: a question that sounds useless — 'how big is everything?' — was answered with a WELL and a STICK. After that, what question dares call itself unanswerable?" }
+        ]
+      },
+      {
+        text: "People think this Library is Greek. Look closer: Babylonian star-tables, Egyptian medicine, the Hebrew scriptures being turned into Greek down the hall by seventy scholars, Indian numbers arriving with every eastern fleet. What do you conclude this place actually is?",
+        choices: [
+          { label: "Not a Greek library — the world's memory, with a Greek doorkeeper.", insight: 3,
+            reply: "Precisely so. Genius is not grown here; it is COLLECTED here, from everywhere, and the collision does the rest. Eratosthenes needed Egyptian surveys and Babylonian arithmetic before Greek geometry could close the circle. Every 'Greek miracle' in these halls has foreign parents. Guard your scrolls, traveler — and if you can spare a copy, we take donations." },
+          { label: "A trophy-house of conquered peoples' books.", insight: 2,
+            reply: "There is iron in that, and I won't pretend the ships' captains volunteer. But observe what conquest cannot do: it cannot READ. The scrolls sit dead until someone crosses them — Babylon's data with Euclid's proofs, Egypt's centuries with Greece's impatience. Theft gathered some of this library; only mixture makes it think." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The World's Backup",
+      text: "The Library of Alexandria was history's first systematic attempt to copy everything — including the famous 'ships' copies' law. Its greatest results were mixtures: Eratosthenes computed the earth's circumference (astonishingly accurately) by combining Greek geometry, Egyptian land-surveys and a well at Syene; the Septuagint turned Hebrew scripture into Greek, the version early Christianity would carry across the empire. Alexandria proved that a civilization's genius is measured by what it imports.",
+      route: "Babylon + Egypt + Judea + Greece → one reading room"
+    }
+  },
+
+  arete: {
+    name: "Melissa",
+    title: "philosopher of the Garden District",
+    portrait: { skin: "#e8c098", robe: "#8a3f5a", hat: "none", beard: "none" },
+    nodes: [
+      {
+        text: "Yes, the lectures here are mine; the doorman only looks wiser. You've walked the whole road, they tell me — then you can settle a wager. In all those miles of philosophers, how many women were you sent to hear?",
+        choices: [
+          { label: "None. You are the first anyone pointed me toward.", insight: 3,
+            reply: "And so I win my wager, and it is a bitter coin. Yet women taught in every tradition you passed: Gargi, who questioned the sage Yajnavalkya in the Upanishads until he begged her to stop; Theano, who ran the Pythagorean school when Pythagoras died; Arete of Cyrene, who inherited her father's school and taught it to her son. You did not pass a road without women philosophers, friend. You passed a road without women's SCRIBES." },
+          { label: "Philosophy is rare in anyone — perhaps it's simply rarer in women.", insight: 1,
+            reply: "Is it? Or is it merely rarer for a woman's arguments to be written down under her own name? Gargi debated kings' sages in India; Theano ran Pythagoras' school; Arete of Cyrene trained her own son as her successor — they called him 'mother-taught.' The rarity you speak of, I suggest, lives in the ink, not in the minds." },
+          { label: "Does it matter who speaks a truth, so long as it's true?", insight: 2,
+            reply: "A fine principle — now test it. If it doesn't matter who speaks, why were the speakers so carefully chosen? A truth loses nothing by a woman's voice; but a woman's truth, unrecorded, is lost entirely — and then the world concludes she never spoke. The argument is sound; the archive is rigged." }
+        ]
+      },
+      {
+        text: "I teach what Arete's school taught: that pleasure is the business of life — but heed the fine print — and that only judgment can tell true coin from counterfeit. The drunkard and the sage both seek pleasure; what separates them?",
+        choices: [
+          { label: "The sage counts the whole price — tomorrow's pain is part of tonight's bill.", insight: 3,
+            reply: "Exactly. The drunkard reads only the first line of the contract. Judgment is the auditor of pleasure: it counts the hangover, the debt, the friend insulted. We are not solemn ascetics here — Alexandria would never allow it — but we read the WHOLE bill. That, in one sentence, is a woman's philosophy: someone in every house has always had to do the full accounting." },
+          { label: "Nothing — pleasure is pleasure, and judgment is a spoilsport.", insight: 2,
+            reply: "Then I prescribe you one month of that creed — you will return to me either a philosopher or a ruin, and both would prove my point. Pleasure unaudited spends the principal. Even Epicurus next door, whom I quarrel with weekly, agrees on this: the sweetest life belongs to the best accountant." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Unrecorded Half",
+      text: "Women taught in every tradition on this road: Gargi Vachaknavi debates the greatest sage of the Upanishads; Theano led the Pythagorean community after Pythagoras; Arete of Cyrene headed a Greek school and trained her son (nicknamed 'mother-taught'); later, Ban Zhao completed China's great dynastic history and Hypatia led Alexandria's mathematicians. The thread is real but thin — not because women didn't philosophize, but because scribes rarely recorded them. Every tradition's archive is smaller than its mind was.",
+      route: "every city on the road — mostly unwritten"
+    }
+  },
+
+  lucretius: {
+    name: "Lucretius",
+    title: "Epicurean poet",
+    portrait: { skin: "#e8c098", robe: "#6b7a4a", hat: "laurel", beard: "none" },
+    nodes: [
+      {
+        text: "You catch me mid-line — six books on the nature of things, in verse, and Rome would rather watch gladiators. Do you know why physicians honey the rim of a cup of wormwood? That is my whole method. Say it back to me, traveler, so I know the road teaches something.",
+        choices: [
+          { label: "The sweetness gets the medicine down — beauty carries the hard truth.", insight: 3,
+            reply: "Exactly! Epicurus' doctrine is wormwood to Romans: no punishing gods, no afterlife, only atoms and void and this one sunlit life. Bitter — and liberating, if swallowed. So I brew it in hexameters. Men who would burn a treatise will memorize a poem. Beauty is not decoration, friend; beauty is the DELIVERY SYSTEM." },
+          { label: "To disguise poison, usually.", insight: 1,
+            reply: "Ha — a taster's suspicion! But consider: the priests already sell poison undisguised, fear of gods and fear of death, and Rome gulps it daily. My honeyed cup holds the antidote. If both sides must sweeten, judge them by what reaches the stomach." },
+          { label: "Doctors like their fees; sweet cups get refills.", insight: 2,
+            reply: "You have Roman instincts, I grant it. But observe — I charge nothing. The poem is free the moment it is memorized, and it copies itself in every mind that loves it. That is the economics of beauty: the one commodity that multiplies by being given away." }
+        ]
+      },
+      {
+        text: "Here is what keeps me writing past midnight. Everything is atoms — you, me, the gods if any, this ink. Atoms scatter; arrangements die. So tell me: in a universe of scattering, how does anything of a mind survive?",
+        choices: [
+          { label: "By being copied — a poem is a mind's arrangement, printed on other minds.", insight: 4,
+            reply: "YES. My body's atoms will scatter — let them. But this arrangement of words, if it is beautiful enough, will be copied, and copied, and copied — each copy a new body for the same thought. Perhaps some dark century will come when only one copy remains, moldering on a shelf. One is enough. One copy, one curious reader, and the whole fire relights. That is the only immortality I believe in — and, note well, it is the one kind that demands OTHER PEOPLE. Even eternity, it turns out, is a collaboration." },
+          { label: "It doesn't. The dark eats everything. Write anyway.", insight: 3,
+            reply: "Spoken like a Roman Stoic — and I half agree: write anyway. But take the odds seriously! A thought lodged in one skull dies with it; lodged in a book, it needs only one survivor per century. Those are odds a gambler takes. The dark is patient, friend, but so are libraries." }
+        ]
+      }
+    ],
+    connection: {
+      title: "The Poem That Slept",
+      text: "Lucretius poured Epicurus' philosophy — atoms, void, no divine punishment, one precious life — into the Latin poem De Rerum Natura, wagering that beauty would carry the doctrine further than argument could. He nearly lost the bet: the poem survived the Middle Ages in a bare handful of copies until 1417, when the book-hunter Poggio Bracciolini found one in a German monastery. Its rediscovery electrified the Renaissance. An idea can sleep for a thousand years inside a beautiful arrangement of words — and wake.",
+      route: "Athens → Rome → one monastery shelf → the Renaissance"
     }
   },
 
@@ -707,6 +916,7 @@ const EVENTS = [
         result: "Silver changes hands and the riders melt away. Expensive — but every philosopher agrees you cannot argue with an arrow." },
       { label: "Try to reason with them.",
         effect: { insight: 2, silver: -10 },
+        ach: "silver_tongue",
         result: "You talk — about roads, about risk, about how a fed merchant returns next season but a robbed one never does. The leader laughs, takes a token payment 'for the lesson,' and lets you pass. Philosophy has its uses." },
       { label: "Run for it!",
         effect: { health: -10, food: -3, camels: -1 },
@@ -1063,6 +1273,66 @@ const QUIZ = [
       "That all words for father sound alike by nature."
     ],
     correct: 0
+  },
+  {
+    req: "simaqian",
+    q: "A courier asks: 'The Grand Historian in Chang'an — what did he say his history was weaving?'",
+    options: [
+      "A list of emperors and their omens.",
+      "One thread through heaven and humanity, past and present — neighbors included.",
+      "An inventory of the imperial treasury."
+    ],
+    correct: 1
+  },
+  {
+    req: "anyuan",
+    q: "A horse-drover wonders: 'That Parthian in Kashgar with his sutras — who does he say will first carry the Buddha's words into Chinese?'",
+    options: [
+      "A Roman ambassador with a gift for languages.",
+      "A Chinese general returning from conquest.",
+      "Someone from the middle of the road — a Persian who speaks to both ends."
+    ],
+    correct: 2
+  },
+  {
+    req: "fabulist",
+    q: "A campfire neighbor grins: 'The fable-teller of Merv — why does he put wisdom in the mouths of animals?'",
+    options: [
+      "Because a king will swallow advice from a jackal that he'd behead a man for.",
+      "Because animals remember stories better than men.",
+      "Because his patrons pay by the beast."
+    ],
+    correct: 0
+  },
+  {
+    req: "librarian",
+    q: "A sailor scoffs: 'They say a man in Alexandria measured the whole earth. With what?'",
+    options: [
+      "A very long rope and ten years of walking.",
+      "A well at Syene, a shadow at Alexandria, and geometry.",
+      "He didn't — the earth is beyond measure."
+    ],
+    correct: 1
+  },
+  {
+    req: "arete",
+    q: "A young student whispers: 'The woman philosopher in Alexandria named women who taught in every tradition. Which names were they?'",
+    options: [
+      "Gargi, Theano, and Arete of Cyrene.",
+      "Helen, Circe, and Penelope.",
+      "She said there were none worth naming."
+    ],
+    correct: 0
+  },
+  {
+    req: "lucretius",
+    q: "A copyist asks: 'The poet in Rome — why does he write philosophy in verse?'",
+    options: [
+      "Because prose is taxed and poetry is not.",
+      "Because Epicurus commanded it in his will.",
+      "Honey on the cup's rim — beauty makes the hard truth drinkable."
+    ],
+    correct: 2
   }
 ];
 
@@ -1105,12 +1375,62 @@ const CITY_BY_ID = {};
 CITIES.forEach(c => { CITY_BY_ID[c.id] = c; });
 const DEFAULT_ROUTE = CITIES.filter(c => !c.optional).map(c => c.id);
 
-// The Kashgar branch: the southern detour over the Karakoram.
-const DETOUR = {
-  from: "kashgar",
-  via: "taxila",
-  leg: { dist: 700, terrain: "mountain" } // Kashgar → Taxila
+// Branch points. Each detour splices an optional city into the
+// route and overrides the leg that reaches it.
+const DETOURS = [
+  {
+    from: "kashgar",
+    via: "taxila",
+    leg: { dist: 700, terrain: "mountain" },
+    label: "⛰  Take the southern detour to Taxila  (700 km of mountain — longer road, more minds)",
+    journal: "Chose the southern road over the high passes to Taxila."
+  },
+  {
+    from: "antioch",
+    via: "alexandria",
+    leg: { dist: 600, terrain: "sea" },
+    label: "⚓  Sail first to Alexandria  (600 km of sea — the Library of the world)",
+    journal: "Booked passage south to Alexandria, city of the Library."
+  }
+];
+
+// ------------------------------------------------------------
+// Game modes.
+// ------------------------------------------------------------
+
+const GAME_MODES = {
+  journey: {
+    label: "The Journey",
+    blurb: "The classic road: travel at your own pace, meet every mind you can, reach Rome alive."
+  },
+  envoy: {
+    label: "The Imperial Envoy",
+    blurb: "The Han court commissions you: reach Rome within 85 days or the commission is void. Well funded, badly hurried — every detour and rest day costs.",
+    dayLimit: 85,
+    start: { food: 32, water: 26, silver: 260 }
+  },
+  symposium: {
+    label: "The Symposium",
+    blurb: "No road, no rations — pure wits. Face questions drawn from the whole road with three lives; each answer reveals the Connection behind it."
+  }
 };
+
+// ------------------------------------------------------------
+// Achievements (persist across runs in localStorage).
+// ------------------------------------------------------------
+
+const ACHIEVEMENTS = [
+  { id: "first_scroll",  name: "First Thread",        desc: "Record your first Connection in the Codex." },
+  { id: "high_road",     name: "The High Road",       desc: "Cross the Karakoram to Taxila." },
+  { id: "lighthouse",    name: "By the Lighthouse",   desc: "Sail the detour to Alexandria and its Library." },
+  { id: "silver_tongue", name: "Silver Tongue",       desc: "Talk your way past bandits with philosophy alone." },
+  { id: "campfire_sage", name: "Campfire Sage",       desc: "Answer 5 campfire questions correctly in one journey." },
+  { id: "by_a_thread",   name: "By a Thread",         desc: "Reach Rome with 25 health or less." },
+  { id: "ascetic_win",   name: "Barefoot to Rome",    desc: "Complete the journey on the Ascetic's Path." },
+  { id: "envoy_win",     name: "The Emperor's Swift", desc: "Complete the Imperial Envoy commission in time." },
+  { id: "symposiarch",   name: "Symposiarch",         desc: "Finish a perfect Symposium — every question right." },
+  { id: "sage",          name: "Sage of Two Worlds",  desc: "Hold all the Connections in a single journey." }
+];
 
 const START_STATE = {
   day: 1,

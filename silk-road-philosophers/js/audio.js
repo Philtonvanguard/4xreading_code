@@ -128,6 +128,7 @@ const MOODS = {
   TRAVEL: "travel", CAMP: "travel", EVENT: "travel",
   CITY: "city", MARKET: "city",
   DIALOGUE: "dialogue", CODEX: "dialogue", MAP: "dialogue", JOURNAL: "dialogue",
+  SYMPOSIUM: "city", RECORDS: "title",
   VICTORY: "victory",
   GAMEOVER: "gameover"
 };

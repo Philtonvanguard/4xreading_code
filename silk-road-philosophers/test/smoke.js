@@ -57,8 +57,11 @@ module.exports = {
   ui, applyEffect, closeOverlay, showMap, showTitle,
   triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES,
   TOTAL_CONNECTIONS, DIFFICULTIES, chooseDifficulty,
-  CITY_BY_ID, DEFAULT_ROUTE, DETOUR, currentLeg, showJournal,
-  TRACKS, MOODS, toggleSound, updateMusic, get soundMode() { return soundMode; }
+  CITY_BY_ID, DEFAULT_ROUTE, DETOURS, currentLeg, showJournal,
+  TRACKS, MOODS, toggleSound, updateMusic, get soundMode() { return soundMode; },
+  GAME_MODES, ACHIEVEMENTS, startEnvoy, startSymposium, answerSymposium,
+  endSymposium, showRecords, chooseMode, unlockAch, loadStore, checkDeadline,
+  ACH_KEY, REC_KEY, get SYM() { return SYM; }
 };
 `;
 const mod = { exports: {} };
@@ -113,9 +116,10 @@ while (guardCities++ < 15) {
   clickChoice(3); // sell scroll
   assert(game.G.soldAt[c.id], "sold scroll at " + c.name);
 
-  // set out via the city menu (taking the southern detour at Kashgar)
+  // set out via the city menu, taking every detour on offer
   game.cityMenu();
-  if (c.id === game.DETOUR.from) clickByText("southern detour");
+  const det = game.DETOURS.find(d => d.from === c.id);
+  if (det) clickByText(game.CITY_BY_ID[det.via].name);
   else clickByText("Set out");
   assert(game.mode === "TRAVEL", "traveling from " + c.name);
 
@@ -134,9 +138,14 @@ while (guardCities++ < 15) {
   assert(game.G.cityIndex === startIdx + 1, "arrived past " + c.name);
 }
 assert(game.G.route.includes("taxila"), "route includes the Taxila detour");
+assert(game.G.route.includes("alexandria"), "route includes the Alexandria detour");
 
 assert(game.G.scrolls.length === game.TOTAL_CONNECTIONS,
   "collected all " + game.TOTAL_CONNECTIONS + " scrolls, got " + game.G.scrolls.length);
+assert(game.loadStore(game.ACH_KEY).sage, "sage achievement unlocked");
+assert(game.loadStore(game.ACH_KEY).high_road, "high_road achievement unlocked");
+assert(game.loadStore(game.ACH_KEY).lighthouse, "lighthouse achievement unlocked");
+assert(game.loadStore(game.ACH_KEY).first_scroll, "first_scroll achievement unlocked");
 game.showVictory();
 assert(game.mode === "VICTORY", "victory shown");
 assert(ui.text.textContent.includes(game.TOTAL_CONNECTIONS + " of " + game.TOTAL_CONNECTIONS), "victory shows full count");
@@ -220,12 +229,19 @@ game.G.cityIndex = game.DEFAULT_ROUTE.indexOf("kashgar");
 game.cityMenu();
 clickByText("southern detour");
 assert(game.G.route[game.G.cityIndex + 1] === "taxila", "detour inserts Taxila next");
-assert(game.currentLeg().dist === game.DETOUR.leg.dist, "detour leg uses override distance");
+assert(game.currentLeg().dist === game.DETOURS[0].leg.dist, "detour leg uses override distance");
 game.cityMenu(); // back at the menu, detour already chosen: no second offer
 assert(!ui.choices.children.some(b => b.textContent.includes("southern detour")), "detour offered only once");
+// the Alexandria fork at Antioch
+game.newGame();
+game.G.cityIndex = game.DEFAULT_ROUTE.indexOf("antioch");
+game.cityMenu();
+clickByText("Alexandria");
+assert(game.G.route[game.G.cityIndex + 1] === "alexandria", "sea detour inserts Alexandria next");
+assert(game.currentLeg().terrain === "sea", "Alexandria leg is by sea");
 
 // ---- difficulty levels ----
-assert(game.TOTAL_CONNECTIONS === 17, "17 philosophers in the world");
+assert(game.TOTAL_CONNECTIONS === 23, "23 philosophers in the world");
 for (const key of Object.keys(game.DIFFICULTIES)) {
   const d = game.DIFFICULTIES[key];
   game.newGame(key);
@@ -255,6 +271,65 @@ assert(game.toggleSound() === "Sound: sfx only", "toggle to sfx");
 assert(game.toggleSound() === "Sound: off", "toggle to off");
 assert(game.toggleSound() === "Sound: music+sfx", "toggle back to full");
 game.updateMusic("TRAVEL"); // no AudioContext headless: must not throw
+
+// ---- mode select ----
+game.chooseMode();
+assert(ui.choices.children.length === 4, "mode screen offers 3 modes + back");
+assert(ui.choices.children.some(b => b.textContent.includes("Envoy")), "envoy mode offered");
+assert(ui.choices.children.some(b => b.textContent.includes("Symposium")), "symposium mode offered");
+
+// ---- the Imperial Envoy: deadline ends the run ----
+game.startEnvoy();
+assert(game.G.gameMode === "envoy", "envoy mode set");
+assert(game.G.dayLimit === game.GAME_MODES.envoy.dayLimit, "envoy day limit set");
+assert(game.G.silver === game.GAME_MODES.envoy.start.silver, "envoy funding applied");
+assert(ui.text.textContent.includes("day " + game.G.dayLimit), "envoy briefing shows the deadline");
+game.G.day = game.G.dayLimit; // the eve of the deadline
+game.startTravel();
+game.travelDayTick();
+assert(game.mode === "GAMEOVER", "missing the envoy deadline ends the run");
+assert(ui.text.textContent.includes("commission"), "deadline game over explains itself");
+// rest days also count against the clock
+game.startEnvoy();
+game.G.day = game.G.dayLimit;
+game.applyEffect({ days: 1 });
+assert(game.mode === "GAMEOVER", "resting past the deadline ends the run");
+
+// ---- the Symposium: perfect run then a three-stumble run ----
+game.startSymposium();
+assert(game.mode === "SYMPOSIUM", "symposium starts");
+const totalQ = game.SYM.order.length;
+assert(totalQ === game.QUIZ.length, "symposium asks every question");
+while (game.SYM.i < totalQ && game.SYM.lives > 0) {
+  const quiz = game.SYM.order[game.SYM.i];
+  clickChoice(quiz.correct);
+  assert(ui.text.textContent.includes(game.PHILOSOPHERS[quiz.req].connection.title), "reveal shows the connection");
+  clickChoice(0); // next / verdict
+}
+assert(game.SYM.correct === totalQ, "perfect symposium answered all");
+assert(ui.text.textContent.includes("SYMPOSIARCH"), "perfect run earns Symposiarch");
+assert(game.loadStore(game.ACH_KEY).symposiarch, "symposiarch achievement unlocked");
+assert(game.loadStore(game.REC_KEY).symposium > 0, "symposium record saved");
+
+game.startSymposium();
+for (let w = 0; w < 3; w++) {
+  const quiz = game.SYM.order[game.SYM.i];
+  clickChoice((quiz.correct + 1) % quiz.options.length); // deliberately wrong
+  clickChoice(0);
+}
+assert(ui.text.textContent.includes("FELLED EARLY"), "three wrong answers end the symposium");
+
+// ---- hall of records ----
+game.showRecords();
+assert(game.mode === "RECORDS", "records screen opens");
+assert(ui.text.innerHTML.includes("Symposiarch"), "records lists achievements");
+assert(ui.text.innerHTML.includes("Best scores"), "records lists best scores");
+
+// ---- silver tongue achievement rides the bandit event ----
+game.newGame();
+const bandits = game.EVENTS.find(e => e.id === "bandits");
+const reasonIdx = bandits.choices.findIndex(ch => ch.ach === "silver_tongue");
+assert(reasonIdx >= 0, "bandit reasoning choice carries the achievement");
 
 // ---- death clears the save ----
 game.newGame();

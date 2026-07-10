@@ -47,6 +47,9 @@ function newGame(diffKey) {
     eventChance: diff.eventChance,
     priceMul: diff.priceMul,
     difficulty: diff.label,
+    gameMode: "journey",
+    dayLimit: 0,
+    quizCorrect: 0,
     scrolls: [],
     met: {},
     soldAt: {},
@@ -84,6 +87,48 @@ function clearSave() {
   if (hasStorage) try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
 }
 
+// --- achievements & records (persist across runs) -------------
+
+const ACH_KEY = "silk_road_achievements";
+const REC_KEY = "silk_road_records";
+
+function loadStore(key) {
+  if (!hasStorage) return {};
+  try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
+}
+function saveStore(key, obj) {
+  if (hasStorage) try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) {}
+}
+
+function unlockAch(id) {
+  const store = loadStore(ACH_KEY);
+  if (store[id]) return false;
+  store[id] = true;
+  saveStore(ACH_KEY, store);
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if (a) { showToast("✦ Achievement: " + a.name); sfx.coin(); }
+  return true;
+}
+
+function saveRecord(modeKey, score) {
+  const rec = loadStore(REC_KEY);
+  if (!rec[modeKey] || score > rec[modeKey]) {
+    rec[modeKey] = score;
+    saveStore(REC_KEY, rec);
+    showToast("✦ New record: " + score);
+  }
+}
+
+let toastTimer = null;
+function showToast(text) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = text;
+  t.classList.remove("hidden");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add("hidden"), 3200);
+}
+
 // (sound effects and the music engine live in js/audio.js)
 
 // --- helpers -------------------------------------------------
@@ -113,7 +158,7 @@ function currentLeg() {
 function updateStats() {
   if (!G) return;
   ui.stats.classList.remove("hidden");
-  ui.st.day.textContent = "Day " + G.day;
+  ui.st.day.textContent = "Day " + G.day + (G.dayLimit ? " / " + G.dayLimit : "");
   ui.st.food.textContent = "Food " + G.food;
   ui.st.water.textContent = "Water " + G.water;
   ui.st.silver.textContent = "Silver " + G.silver;
@@ -136,7 +181,8 @@ function applyEffect(e) {
   G.insight += e.insight || 0;
   G.day += e.days || 0;
   updateStats();
-  if (G.health <= 0) gameOver("Your strength gave out on the road. The caravan buried you facing the sunrise, with your scrolls for a pillow.");
+  if (G.health <= 0) { gameOver("Your strength gave out on the road. The caravan buried you facing the sunrise, with your scrolls for a pillow."); return; }
+  if (e.days) checkDeadline();
 }
 
 // --- TITLE ---------------------------------------------------
@@ -164,9 +210,20 @@ function showTitle() {
       else arriveAtCity(false);
     });
   }
-  addChoice("⟶  Begin " + (save ? "a new" : "the") + " journey", chooseDifficulty);
+  addChoice("⟶  Begin " + (save ? "a new" : "the") + " journey", chooseMode);
+  addChoice("✧  Hall of Records", showRecords);
   addChoice("?   How to play", showHelp);
   ui.hint.textContent = "keys: 1–9 choose · C/M/J panels";
+}
+
+function chooseMode() {
+  setSpeaker("CHOOSE YOUR ROAD");
+  setText("Three ways to walk the Silk Road of Ideas.");
+  clearChoices();
+  addChoice("🐫  " + GAME_MODES.journey.label + " — " + GAME_MODES.journey.blurb, chooseDifficulty);
+  addChoice("🐎  " + GAME_MODES.envoy.label + " — " + GAME_MODES.envoy.blurb, startEnvoy);
+  addChoice("🍷  " + GAME_MODES.symposium.label + " — " + GAME_MODES.symposium.blurb, startSymposium);
+  addChoice("⟵  Back", showTitle);
 }
 
 function chooseDifficulty() {
@@ -177,7 +234,25 @@ function chooseDifficulty() {
     const d = DIFFICULTIES[key];
     addChoice(d.label + " — " + d.blurb, () => { newGame(key); arriveAtCity(true); });
   });
-  addChoice("⟵  Back", showTitle);
+  addChoice("⟵  Back", chooseMode);
+}
+
+function startEnvoy() {
+  newGame("merchant");
+  const m = GAME_MODES.envoy;
+  G.gameMode = "envoy";
+  G.dayLimit = m.dayLimit;
+  Object.assign(G, m.start);
+  journal("Commissioned as imperial envoy: Rome in " + m.dayLimit + " days, or the commission is void.");
+  arriveAtCity(true);
+}
+
+function checkDeadline() {
+  if (G && G.dayLimit && G.day > G.dayLimit && mode !== "GAMEOVER") {
+    gameOver("Day " + G.dayLimit + " has come and gone, and Rome is still beyond the horizon. The commission is void; the court's seal on your letters is now just wax.\n\nYou finish the road anyway — as a philosopher, not an envoy. Some deadlines matter less than the emperor believes.");
+    return true;
+  }
+  return false;
 }
 
 function showHelp() {
@@ -201,11 +276,16 @@ function arriveAtCity(first) {
   G.legDist = 0;
   const c = city();
   journal(first ? "The journey begins in " + c.name + "." : "Reached " + c.name + ".");
+  if (c.id === "taxila") unlockAch("high_road");
+  if (c.id === "alexandria") unlockAch("lighthouse");
+  if (c.id === "rome" && G.health <= 25) unlockAch("by_a_thread");
   updateStats();
   saveGame();
   sfx.arrive();
   setSpeaker(c.name.toUpperCase() + " — " + c.region);
-  setText(c.intro + (first ? "\n\nSeek out the local thinkers before you depart — every scroll you carry makes the journey worth more." : ""));
+  setText(c.intro +
+    (first ? "\n\nSeek out the local thinkers before you depart — every scroll you carry makes the journey worth more." : "") +
+    (first && G.dayLimit ? "\n\n⏳ The imperial seal is heavy in your satchel: Rome by day " + G.dayLimit + ", or the commission is void." : ""));
   cityMenu();
 }
 
@@ -226,19 +306,18 @@ function cityMenu() {
     applyEffect({ silver: -10, health: 15, days: 1 });
     setText("A real bed, a real meal, and a night without watching for bandits. You wake restored.");
   });
+  const det = DETOURS.find(d => d.from === c.id && !G.route.includes(d.via));
   if (c.id === "rome") {
     if (G.met["senator"]) addChoice("★  Conclude your journey", showVictory);
-  } else if (c.id === DETOUR.from && !G.route.includes(DETOUR.via)) {
-    const via = CITY_BY_ID[DETOUR.via];
+  } else if (det) {
     addChoice("⟶  Set out for " + nextCity().name + "  (" + c.distToNext + " km of " + c.terrainToNext + ")",
       startTravel);
-    addChoice("⛰  Take the southern detour to " + via.name + "  (" + DETOUR.leg.dist + " km of " + DETOUR.leg.terrain + " — longer road, more minds)",
-      () => {
-        G.route.splice(G.cityIndex + 1, 0, DETOUR.via);
-        G.legOverrides[G.cityIndex] = DETOUR.leg;
-        journal("Chose the southern road over the high passes to " + via.name + ".");
-        startTravel();
-      });
+    addChoice(det.label, () => {
+      G.route.splice(G.cityIndex + 1, 0, det.via);
+      G.legOverrides[G.cityIndex] = det.leg;
+      journal(det.journal);
+      startTravel();
+    });
   } else {
     const leg = currentLeg();
     addChoice("⟶  Set out for " + nextCity().name + "  (" + leg.dist + " km of " + leg.terrain + ")",
@@ -299,6 +378,8 @@ function finishDialogue() {
   G.met[dialogue.pid] = true;
   G.scrolls.push(p.connection);
   journal("Met " + p.name + " and recorded “" + p.connection.title + "”.");
+  if (G.scrolls.length === 1) unlockAch("first_scroll");
+  if (G.scrolls.length === TOTAL_CONNECTIONS) unlockAch("sage");
   updateStats();
   saveGame();
   sfx.scroll();
@@ -435,6 +516,7 @@ function travelDayTick() {
     gameOver("Hunger and thirst finished what the road began. Travelers will pass your cairn for centuries, and some will leave a coin.");
     return;
   }
+  if (checkDeadline()) return;
   if (starving) travelText("⚠ " + starving + "Your health is failing — reach the next city or find relief.");
   else if (Math.random() < 0.06) travelText(flavorLine());
   else travelText();
@@ -470,6 +552,8 @@ function triggerQuiz() {
                                  : "Fumbled a campfire question; an old pilgrim set me right.");
       if (i === quiz.correct) {
         applyEffect({ insight: 3, silver: 8 });
+        G.quizCorrect = (G.quizCorrect || 0) + 1;
+        if (G.quizCorrect >= 5) unlockAch("campfire_sage");
         sfx.coin();
         setText("Your answer rings true, and the fire circle nods. Someone presses a few coins on you — \"for the teaching.\" This, too, is how philosophers ate.\n\n(+3 insight, +8 silver)");
       } else {
@@ -509,7 +593,8 @@ function triggerEvent() {
   ev.choices.forEach(ch => {
     addChoice("» " + ch.label, () => {
       applyEffect(ch.effect);
-      if (G.health <= 0) return; // gameOver already shown
+      if (mode === "GAMEOVER") return; // death or deadline already shown
+      if (ch.ach) unlockAch(ch.ach);
       journal(ev.title + " · " + ch.label);
       setText(ch.result);
       clearChoices();
@@ -584,7 +669,9 @@ function closeOverlay() {
     case "TITLE": showTitle(); break;
     case "VICTORY": showVictory(); break;
     case "GAMEOVER": gameOver(G.causeOfEnd || "The road ended here."); break;
-    default: cityMenu();
+    case "SYMPOSIUM": if (SYM && SYM.i < SYM.order.length && SYM.lives > 0) renderSymposiumQuestion(); else if (SYM) endSymposium(); else showTitle(); break;
+    case "RECORDS": showRecords(); break;
+    default: if (G) cityMenu(); else showTitle();
   }
 }
 
@@ -601,7 +688,7 @@ function gameOver(text) {
     "\n\nBut ideas do not die with their carriers. Someone will find your scrolls.");
   clearChoices();
   addChoice("✎  Read your travel journal", showJournal);
-  addChoice("↻  Begin a new journey", chooseDifficulty);
+  addChoice("↻  Begin a new journey", chooseMode);
   addChoice("⟵  Title screen", showTitle);
 }
 
@@ -609,12 +696,20 @@ function showVictory() {
   mode = "VICTORY";
   clearSave();
   sfx.scroll();
-  const score = G.insight * 2 + G.scrolls.length * 10 + Math.floor(G.health / 5);
+  const isEnvoy = G.gameMode === "envoy";
+  const speedBonus = isEnvoy ? Math.max(0, (G.dayLimit - G.day) * 3) : 0;
+  const score = G.insight * 2 + G.scrolls.length * 10 + Math.floor(G.health / 5) + speedBonus;
   let rank;
   if (G.scrolls.length >= TOTAL_CONNECTIONS) rank = "SAGE OF TWO WORLDS — the full web of connections, carried intact across the earth.";
   else if (G.scrolls.length >= Math.ceil(TOTAL_CONNECTIONS * 0.66)) rank = "MASTER OF THE ROAD — most of the great threads are in your codex.";
   else if (G.scrolls.length >= Math.ceil(TOTAL_CONNECTIONS * 0.4)) rank = "JOURNEYING SCHOLAR — you glimpsed the web, even if some threads escaped you.";
   else rank = "SURVIVOR OF THE ROAD — you arrived alive. The ideas, mostly, stayed home.";
+  if (isEnvoy) {
+    rank = "THE EMPEROR'S SWIFT — commission delivered with " + (G.dayLimit - G.day) + " days to spare (+" + speedBonus + " speed bonus).\n" + rank;
+    unlockAch("envoy_win");
+  }
+  if (G.difficulty === DIFFICULTIES.ascetic.label) unlockAch("ascetic_win");
+  saveRecord(G.gameMode || "journey", score);
   setSpeaker("ROME — JOURNEY'S END");
   setText(
     "Day " + G.day + ". You stand in the Roman forum wearing a Persian coat, quoting a Chinese sage in Greek, " +
@@ -628,7 +723,114 @@ function showVictory() {
   clearChoices();
   addChoice("✦  Read your Codex of Connections", showCodex);
   addChoice("✎  Read your travel journal", showJournal);
-  addChoice("↻  Travel the road again", chooseDifficulty);
+  addChoice("↻  Travel the road again", chooseMode);
+}
+
+// --- THE SYMPOSIUM (quiz-gauntlet mode) ------------------------
+
+let SYM = null;
+
+function shuffled(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startSymposium() {
+  SYM = { order: shuffled(QUIZ), i: 0, lives: 3, score: 0, streak: 0, correct: 0 };
+  mode = "SYMPOSIUM";
+  ui.stats.classList.add("hidden");
+  renderSymposiumQuestion();
+}
+
+function symStatus() {
+  return "THE SYMPOSIUM — question " + (SYM.i + 1) + " of " + SYM.order.length +
+    "   ·   " + "♥".repeat(SYM.lives) + "♡".repeat(3 - SYM.lives) +
+    "   ·   score " + SYM.score;
+}
+
+function renderSymposiumQuestion() {
+  mode = "SYMPOSIUM";
+  const quiz = SYM.order[SYM.i];
+  setSpeaker(symStatus());
+  setText(quiz.q);
+  clearChoices();
+  quiz.options.forEach((opt, idx) => {
+    addChoice("» " + opt, () => answerSymposium(idx));
+  });
+}
+
+function answerSymposium(idx) {
+  const quiz = SYM.order[SYM.i];
+  const phil = PHILOSOPHERS[quiz.req];
+  const right = idx === quiz.correct;
+  if (right) {
+    SYM.streak++;
+    SYM.correct++;
+    SYM.score += 10 + (SYM.streak - 1) * 2;
+    sfx.coin();
+  } else {
+    SYM.lives--;
+    SYM.streak = 0;
+    sfx.danger();
+  }
+  setSpeaker(symStatus());
+  setText((right ? "✓ Well answered" + (SYM.streak > 1 ? " — streak of " + SYM.streak + "!" : ".")
+                 : "✗ Not so. The answer: " + quiz.options[quiz.correct]) +
+    "\n\n「 " + phil.connection.title + " 」\n" + phil.connection.text);
+  clearChoices();
+  SYM.i++;
+  if (SYM.lives <= 0 || SYM.i >= SYM.order.length) {
+    addChoice("…  See the verdict", endSymposium);
+  } else {
+    addChoice("…  Next question", renderSymposiumQuestion);
+  }
+}
+
+function endSymposium() {
+  mode = "SYMPOSIUM";
+  const total = SYM.order.length;
+  const perfect = SYM.correct === total && SYM.lives === 3;
+  let rank;
+  if (perfect) { rank = "SYMPOSIARCH — a flawless evening. The wine is on the house, forever."; unlockAch("symposiarch"); }
+  else if (SYM.lives <= 0) rank = "A GOOD GUEST FELLED EARLY — three stumbles, but the fire remembers your better answers.";
+  else if (SYM.correct >= Math.ceil(total * 0.7)) rank = "HONORED GUEST — the couch nearest the fire is yours next time.";
+  else rank = "A PROMISING BEGINNER — walk the road itself, then return to this fire.";
+  saveRecord("symposium", SYM.score);
+  setSpeaker("THE SYMPOSIUM — VERDICT");
+  setText("Questions answered rightly: " + SYM.correct + " of " + total +
+    "\nFinal score: " + SYM.score +
+    "\n\n" + rank +
+    "\n\nEvery question tonight was a thread from the real road: the same connections travelers carry, scroll by scroll, from Chang'an to Rome.");
+  clearChoices();
+  addChoice("↻  Another round", startSymposium);
+  addChoice("⟵  Title screen", showTitle);
+}
+
+// --- HALL OF RECORDS -------------------------------------------
+
+function showRecords() {
+  mode = "RECORDS";
+  ui.stats.classList.add("hidden");
+  setSpeaker("HALL OF RECORDS");
+  const rec = loadStore(REC_KEY);
+  const ach = loadStore(ACH_KEY);
+  const unlockedCount = ACHIEVEMENTS.filter(a => ach[a.id]).length;
+  let html = '<div class="codex-entry"><h3>Best scores</h3><p>' +
+    Object.keys(GAME_MODES).map(k =>
+      GAME_MODES[k].label + ": " + (rec[k] ? rec[k] : "—")).join(" &nbsp;·&nbsp; ") +
+    "</p></div>";
+  html += '<div class="codex-entry"><h3>Achievements — ' + unlockedCount + " of " + ACHIEVEMENTS.length + "</h3>" +
+    ACHIEVEMENTS.map(a =>
+      "<p>" + (ach[a.id] ? "✦ " : "· ") + "<b>" + a.name + "</b> — " +
+      (ach[a.id] ? a.desc : "<span style='opacity:.6'>" + a.desc + "</span>") + "</p>").join("") +
+    "</div>";
+  ui.text.innerHTML = html;
+  clearChoices();
+  addChoice("⟵  Back to the title", showTitle);
 }
 
 // --- RENDER LOOP ---------------------------------------------
@@ -659,8 +861,19 @@ function render(t) {
       break;
     case "DIALOGUE": {
       const p = dialogue ? dialogue.phil : null;
-      if (p) drawDialogueScene(ctx, city(), p.portrait, G.cityIndex * 31 + 7);
+      if (p) drawDialogueScene(ctx, city(), p.portrait, G.cityIndex * 31 + 7, frame);
       else drawCityScene(ctx, city(), G.cityIndex * 31 + 7);
+      break;
+    }
+    case "SYMPOSIUM":
+      drawSymposiumScene(ctx, animFrame);
+      break;
+    case "RECORDS": {
+      drawSkyGradient(ctx, SKY.night);
+      drawStars(ctx, 61);
+      ctx.fillStyle = "#e2b94c";
+      ctx.font = "12px monospace";
+      ctx.fillText("✧ the hall of records ✧", 96, 90);
       break;
     }
     case "TRAVEL": case "CAMP": case "EVENT": {
