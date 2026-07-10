@@ -187,6 +187,7 @@ function drawTravelScene(ctx, terrain, skyName, offset, frame, camels, seed) {
     drawHills(ctx, terrain, offset, seed);
     drawGroundStrip(ctx, terrain, offset, seed);
     drawCaravan(ctx, 60, 140, frame, camels);
+    drawParticles(ctx, terrain, Math.floor(offset), seed);
   }
 }
 
@@ -211,6 +212,7 @@ function drawCityScene(ctx, city, seed) {
     ctesiphon:{ wall: "#c9b08a", roof: "#6b5a3a", pagoda: false },
     palmyra:  { wall: "#e0d2ae", roof: "#c0b290", pagoda: false },
     antioch:  { wall: "#e8e0cc", roof: "#a04030", pagoda: false },
+    alexandria:{ wall: "#efe8d8", roof: "#3f7d9a", pagoda: false },
     rome:     { wall: "#efe8d8", roof: "#a04030", pagoda: false }
   };
   const st = styles[city.id] || styles.kashgar;
@@ -227,7 +229,7 @@ function drawCityScene(ctx, city, seed) {
       px(ctx, bx + 3, by - 10, bw - 6, 4, st.roof);
     } else if (city.id === "samarkand" || city.id === "ctesiphon" || city.id === "taxila") {
       drawMound(ctx, bx, by + 2, bw, 10, st.roof); // domes & stupas
-    } else if (city.id === "rome" || city.id === "antioch" || city.id === "palmyra") {
+    } else if (city.id === "rome" || city.id === "antioch" || city.id === "palmyra" || city.id === "alexandria") {
       drawTriangle(ctx, bx - 2, by + 2, bw + 4, 8, st.roof); // pediments
       // columns
       ctx.fillStyle = "#fff8ea";
@@ -247,12 +249,47 @@ function drawCityScene(ctx, city, seed) {
     px(ctx, sx, 142, 26, 12, "#6b4a2a");
     px(ctx, sx - 2, 138, 30, 4, ["#c44", "#4a7", "#47c", "#ca4", "#a4c"][i]);
   }
+  // the Pharos of Alexandria, tiered above the skyline
+  if (city.id === "alexandria") {
+    px(ctx, 268, 60, 22, 70, "#f0ead8");   // base tier
+    px(ctx, 272, 40, 14, 22, "#e5ddc5");   // middle tier
+    px(ctx, 276, 28, 6, 14, "#d9d0b5");    // top tier
+    px(ctx, 275, 22, 8, 6, "#e2b94c");     // the light
+    px(ctx, 262, 24, 12, 2, "#f5e6a8");    // beam, west
+    px(ctx, 284, 24, 12, 2, "#f5e6a8");    // beam, east
+    ctx.fillStyle = "#3a2a1a";             // tower windows
+    for (let wy = 66; wy < 124; wy += 12) ctx.fillRect(277, wy, 4, 5);
+  }
+}
+
+// --- travel-scene weather particles ---------------------------
+
+function drawParticles(ctx, terrain, frame, seed) {
+  const r = srand(seed + 411);
+  if (terrain === "desert" || terrain === "steppe") {
+    ctx.fillStyle = terrain === "desert" ? "#eed9a8" : "#d5e0a5";
+    for (let i = 0; i < 12; i++) {
+      const speed = 2 + r() * 3;
+      const bx = r() * 340, by = 95 + r() * 70;
+      const x = ((bx - frame * speed) % 340 + 340) % 340 - 10;
+      const y = by + Math.sin((frame + i * 37) * 0.05) * 3;
+      ctx.fillRect(Math.round(x), Math.round(y), 2, 1);
+    }
+  } else if (terrain === "mountain") {
+    ctx.fillStyle = "#f2f2fa";
+    for (let i = 0; i < 18; i++) {
+      const bx = r() * 340, drift = 0.3 + r() * 0.5, fall = 0.6 + r() * 0.8;
+      const x = ((bx - frame * drift) % 340 + 340) % 340 - 10;
+      const y = ((r() * 180 + frame * fall) % 180);
+      ctx.fillRect(Math.round(x), Math.round(y), 2, 2);
+    }
+  }
 }
 
 // --- Portraits -----------------------------------------------
 // Drawn large (centered) during dialogue. Parametric pixel face.
 
-function drawPortrait(ctx, spec, cx, cy) {
+function drawPortrait(ctx, spec, cx, cy, frame) {
   const s = 4; // pixel size
   const X = x => cx + x * s, Y = y => cy + y * s;
   const B = (x, y, w, h, c) => px(ctx, X(x), Y(y), w * s, h * s, c);
@@ -262,9 +299,15 @@ function drawPortrait(ctx, spec, cx, cy) {
   B(-5, 5, 10, 2, spec.robe);
   // head
   B(-4, -6, 8, 11, spec.skin);
-  // eyes
-  B(-3, -2, 2, 1, "#221100");
-  B(2, -2, 2, 1, "#221100");
+  // eyes (with an occasional blink)
+  const blink = frame !== undefined && (frame % 130) < 5;
+  if (blink) {
+    px(ctx, X(-3), Y(-2) + s - 1, 2 * s, 1, "#5a3a22");
+    px(ctx, X(2), Y(-2) + s - 1, 2 * s, 1, "#5a3a22");
+  } else {
+    B(-3, -2, 2, 1, "#221100");
+    B(2, -2, 2, 1, "#221100");
+  }
   // nose & mouth
   B(0, 0, 1, 2, "rgba(0,0,0,0.25)");
   B(-1, 3, 3, 1, "#7a4a3a");
@@ -310,12 +353,34 @@ function drawPortrait(ctx, spec, cx, cy) {
   }
 }
 
-function drawDialogueScene(ctx, city, spec, seed) {
+function drawDialogueScene(ctx, city, spec, seed, frame) {
   drawCityScene(ctx, city, seed);
   // dim backdrop, spotlight the speaker
   ctx.fillStyle = "rgba(10,8,4,0.55)";
   ctx.fillRect(0, 0, 320, 180);
-  drawPortrait(ctx, spec, 160, 80);
+  drawPortrait(ctx, spec, 160, 80, frame);
+}
+
+// --- the Symposium (quiz mode) scene --------------------------
+
+function drawSymposiumScene(ctx, frame) {
+  drawSkyGradient(ctx, SKY.night);
+  drawStars(ctx, 47);
+  px(ctx, 0, 130, 320, 50, "#2a2118"); // dark ground
+  // seated listeners flanking the fire
+  const seat = (x, robe) => {
+    px(ctx, x, 118, 10, 12, robe);
+    px(ctx, x + 2, 112, 6, 6, "#d9a06b");
+  };
+  seat(100, "#7a5fa0"); seat(76, "#3f7d5c"); seat(210, "#8a2f2b"); seat(234, "#4a5a8a");
+  // the fire, flickering
+  const f = frame % 12;
+  px(ctx, 148, 118, 24, 8, "#553f2a");                       // logs
+  px(ctx, 152, 104 + (f < 6 ? 0 : 2), 16, 14 - (f < 6 ? 0 : 2), "#d4602a");
+  px(ctx, 156, 96 + (f % 4), 8, 12, "#e8942f");
+  px(ctx, 158, 90 + (f % 3) * 2, 4, 8, "#f5d76e");
+  // firelight glow on the ground
+  px(ctx, 120, 126, 80, 4, "rgba(232,148,47,0.25)");
 }
 
 // --- Route map -----------------------------------------------
@@ -330,6 +395,7 @@ const MAP_POINTS = {
   ctesiphon: [148, 80],
   palmyra:   [118, 72],
   antioch:   [95, 62],
+  alexandria:[72, 100],
   rome:      [38, 78]
 }; // east (Chang'an) right, west (Rome) left
 
@@ -367,7 +433,7 @@ function drawMapScene(ctx, route, cityIndex, traveledFrac) {
     const col = visited ? "#a03020" : (onRoute ? "#6b5a3a" : "#b8a988");
     px(ctx, mx - 2, my + 58, 5, 5, col);
     ctx.fillStyle = ri === cityIndex ? "#a03020" : col;
-    const yOff = c.id === "taxila" ? 72 : ((CITIES.indexOf(c) % 2) ? 72 : 52);
+    const yOff = (c.id === "taxila" || c.id === "alexandria") ? 72 : ((CITIES.indexOf(c) % 2) ? 72 : 52);
     ctx.fillText(c.name, Math.min(mx - 10, 270), my + yOff);
   });
   // caravan marker

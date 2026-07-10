@@ -143,3 +143,19 @@ canvas#scene {
 .codex-entry h3 { color: var(--jade); font-size: 14px; margin-bottom: 4px; }
 .codex-entry p  { font-size: 13px; line-height: 1.45; color: var(--ink); }
 .codex-entry .route { font-size: 11px; color: var(--dim); margin-top: 4px; }
+
+#toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2e2316;
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  padding: 8px 18px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  z-index: 10;
+  box-shadow: 0 0 18px #000;
+}
