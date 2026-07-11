@@ -213,13 +213,31 @@ function drawCityScene(ctx, city, seed) {
     palmyra:  { wall: "#e0d2ae", roof: "#c0b290", pagoda: false },
     antioch:  { wall: "#e8e0cc", roof: "#a04030", pagoda: false },
     alexandria:{ wall: "#efe8d8", roof: "#3f7d9a", pagoda: false },
-    rome:     { wall: "#efe8d8", roof: "#a04030", pagoda: false }
+    rome:     { wall: "#efe8d8", roof: "#a04030", pagoda: false },
+    // Act II skylines
+    baghdad:  { wall: "#d9c090", roof: "#3f7d5c", pagoda: false },
+    bukhara:  { wall: "#c9a878", roof: "#4a7d8a", pagoda: false },
+    cordoba:  { wall: "#e8dcc0", roof: "#a05a30", pagoda: false },
+    konya:    { wall: "#d4b88a", roof: "#3f6d5a", pagoda: false },
+    florence: { wall: "#e0c9a0", roof: "#a04030", pagoda: false },
+    amsterdam:{ wall: "#8a5a3a", roof: "#3a3a4a", pagoda: false },
+    paris:    { wall: "#d8d0c0", roof: "#4a4a5a", pagoda: false },
+    edinburgh:{ wall: "#8a8a80", roof: "#3a3a3a", pagoda: false },
+    konigsberg:{ wall: "#b08a6a", roof: "#5a3a2a", pagoda: false },
+    london:   { wall: "#9a8a75", roof: "#3a3a3a", pagoda: false },
+    concord:  { wall: "#e8e0d0", roof: "#6b4a2a", pagoda: false },
+    vienna:   { wall: "#e5d8b5", roof: "#5a6b5a", pagoda: false },
+    newyork:  { wall: "#6a7080", roof: "#4a5060", pagoda: false }
   };
+  const DOME_CITIES = ["samarkand", "ctesiphon", "taxila", "baghdad", "bukhara", "konya", "cordoba"];
+  const COLUMN_CITIES = ["rome", "antioch", "palmyra", "alexandria", "florence", "paris", "vienna"];
+  const GABLE_CITIES = ["amsterdam", "concord", "london", "edinburgh", "konigsberg"];
   const st = styles[city.id] || styles.kashgar;
+  const tall = city.id === "newyork";
 
   for (let i = 0; i < 9; i++) {
-    const bw = 24 + Math.floor(r() * 22);
-    const bh = 25 + Math.floor(r() * 35);
+    const bw = tall ? 18 + Math.floor(r() * 14) : 24 + Math.floor(r() * 22);
+    const bh = tall ? 50 + Math.floor(r() * 60) : 25 + Math.floor(r() * 35);
     const bx = i * 36 + Math.floor(r() * 6) - 6;
     const by = 130 - bh;
     px(ctx, bx, by, bw, bh, st.wall);
@@ -227,9 +245,14 @@ function drawCityScene(ctx, city, seed) {
     if (st.pagoda) {
       px(ctx, bx - 3, by - 4, bw + 6, 4, st.roof);
       px(ctx, bx + 3, by - 10, bw - 6, 4, st.roof);
-    } else if (city.id === "samarkand" || city.id === "ctesiphon" || city.id === "taxila") {
+    } else if (tall) {
+      px(ctx, bx + 2, by - 3, bw - 4, 3, st.roof); // setback crown
+      if (bh > 90) px(ctx, bx + Math.floor(bw / 2) - 1, by - 12, 2, 9, st.roof); // spire
+    } else if (GABLE_CITIES.includes(city.id)) {
+      drawTriangle(ctx, bx - 1, by + 2, bw + 2, 10, st.roof); // gabled roofline
+    } else if (DOME_CITIES.includes(city.id)) {
       drawMound(ctx, bx, by + 2, bw, 10, st.roof); // domes & stupas
-    } else if (city.id === "rome" || city.id === "antioch" || city.id === "palmyra" || city.id === "alexandria") {
+    } else if (COLUMN_CITIES.includes(city.id)) {
       drawTriangle(ctx, bx - 2, by + 2, bw + 4, 8, st.roof); // pediments
       // columns
       ctx.fillStyle = "#fff8ea";
@@ -347,6 +370,24 @@ function drawPortrait(ctx, spec, cx, cy, frame) {
       break;
     case "bald":
       break; // shaved monk
+    case "wig": // powdered side-rolls, 18th century
+      B(-5, -8, 10, 2, "#e8e8e8");
+      B(-6, -6, 2, 6, "#e8e8e8");
+      B(4, -6, 2, 6, "#e8e8e8");
+      B(-6, 0, 2, 3, "#e8e8e8");
+      B(4, 0, 2, 3, "#e8e8e8");
+      break;
+    case "tophat":
+      B(-3, -14, 6, 7, "#1a1a1a");
+      B(-5, -7, 10, 1, "#1a1a1a");
+      break;
+    case "long": { // long hair, color from spec.hair
+      const hc = spec.hair || "#553f2a";
+      B(-5, -8, 10, 2, hc);
+      B(-5, -6, 1, 10, hc);
+      B(4, -6, 1, 10, hc);
+      break;
+    }
     default: // plain hair
       B(-4, -8, 8, 2, "#555555");
       break;
@@ -399,7 +440,10 @@ const MAP_POINTS = {
   rome:      [38, 78]
 }; // east (Chang'an) right, west (Rome) left
 
-function drawMapScene(ctx, route, cityIndex, traveledFrac) {
+function drawMapScene(ctx, route, cityIndex, traveledFrac, points, citiesList, title) {
+  points = points || MAP_POINTS;
+  citiesList = citiesList || CITIES;
+  title = title || "THE SILK ROAD  ·  CHANG'AN TO ROME";
   drawSkyGradient(ctx, SKY.night);
   drawStars(ctx, 5);
   px(ctx, 0, 0, 320, 180, "rgba(20,16,10,0.6)");
@@ -407,11 +451,11 @@ function drawMapScene(ctx, route, cityIndex, traveledFrac) {
   px(ctx, 12, 22, 296, 141, "#e5d8b5");
   ctx.fillStyle = "#8a7350";
   ctx.font = "10px monospace";
-  ctx.fillText("THE SILK ROAD  ·  CHANG'AN TO ROME", 60, 36);
+  ctx.fillText(title, Math.max(20, Math.round((320 - title.length * 6) / 2)), 36);
 
   // route line along the chosen route
   for (let i = 0; i < route.length - 1; i++) {
-    const [x1, y1] = MAP_POINTS[route[i]], [x2, y2] = MAP_POINTS[route[i + 1]];
+    const [x1, y1] = points[route[i]], [x2, y2] = points[route[i + 1]];
     const steps = 14;
     const done = i < cityIndex;
     const partial = i === cityIndex ? traveledFrac : 0;
@@ -423,23 +467,23 @@ function drawMapScene(ctx, route, cityIndex, traveledFrac) {
       px(ctx, cx, cy, 2, 2, lit ? "#a03020" : "#b0a080");
     }
   }
-  // every city in the world appears; off-route ones are faint
+  // every city of the act appears; off-route ones are faint
   ctx.font = "8px monospace";
-  CITIES.forEach(c => {
-    const [mx, my] = MAP_POINTS[c.id];
+  citiesList.forEach((c, ci) => {
+    const [mx, my] = points[c.id];
     const ri = route.indexOf(c.id);
     const onRoute = ri >= 0;
     const visited = onRoute && ri <= cityIndex;
     const col = visited ? "#a03020" : (onRoute ? "#6b5a3a" : "#b8a988");
     px(ctx, mx - 2, my + 58, 5, 5, col);
     ctx.fillStyle = ri === cityIndex ? "#a03020" : col;
-    const yOff = (c.id === "taxila" || c.id === "alexandria") ? 72 : ((CITIES.indexOf(c) % 2) ? 72 : 52);
-    ctx.fillText(c.name, Math.min(mx - 10, 270), my + yOff);
+    const yOff = c.optional ? 72 : ((ci % 2) ? 72 : 52);
+    ctx.fillText(c.name, Math.min(Math.max(2, mx - 14), 250), my + yOff);
   });
-  // caravan marker
+  // traveler marker
   const last = route.length - 1;
-  const [x1, y1] = MAP_POINTS[route[Math.min(cityIndex, last)]];
-  const [x2, y2] = MAP_POINTS[route[Math.min(cityIndex + 1, last)]];
+  const [x1, y1] = points[route[Math.min(cityIndex, last)]];
+  const [x2, y2] = points[route[Math.min(cityIndex + 1, last)]];
   const mx = Math.round(x1 + (x2 - x1) * traveledFrac);
   const my = Math.round(y1 + (y2 - y1) * traveledFrac) + 60;
   px(ctx, mx - 2, my - 6, 6, 4, "#7a5fa0");

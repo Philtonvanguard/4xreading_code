@@ -34,14 +34,37 @@ let lastTime = 0;
 let currentEvent = null;
 let dialogue = null;   // { phil, nodeIndex, phase: "ask"|"reply", reply }
 
-const TOTAL_CONNECTIONS = Object.keys(PHILOSOPHERS).length;
+// --- acts ------------------------------------------------------
 
-function newGame(diffKey) {
+function countConnections(cities) {
+  return cities.reduce((s, c) => s + c.philosophers.length, 0);
+}
+const ACT_CONN = { 1: countConnections(CITIES), 2: countConnections(ACT2_CITIES) };
+
+function actNum() { return (G && G.act) || 1; }
+
+function currentAct() {
+  return actNum() === 2 ? {
+    num: 2, cities: ACT2_CITIES, route: ACT2_ROUTE, detours: ACT2_DETOURS,
+    points: MAP_POINTS2, mapTitle: "THE RIVER OF TIME  ·  850 — 1950",
+    end: "newyork", finale: "king", title: "Act II — The River of Time"
+  } : {
+    num: 1, cities: CITIES, route: DEFAULT_ROUTE, detours: DETOURS,
+    points: MAP_POINTS, mapTitle: "THE SILK ROAD  ·  CHANG'AN TO ROME",
+    end: "rome", finale: "senator", title: "Act I — The Silk Road"
+  };
+}
+
+const PROG_KEY = "silk_road_progress";
+function act2Unlocked() { return !!loadStore(PROG_KEY).act2; }
+
+function newGame(diffKey, act) {
   const diff = DIFFICULTIES[diffKey] || DIFFICULTIES.merchant;
   G = Object.assign({}, START_STATE, diff.start, {
+    act: act || 1,
     cityIndex: 0,
     legDist: 0,
-    route: DEFAULT_ROUTE.slice(),
+    route: ((act || 1) === 2 ? ACT2_ROUTE : DEFAULT_ROUTE).slice(),
     legOverrides: {},
     pace: "steady",
     eventChance: diff.eventChance,
@@ -163,7 +186,7 @@ function updateStats() {
   ui.st.water.textContent = "Water " + G.water;
   ui.st.silver.textContent = "Silver " + G.silver;
   ui.st.health.textContent = "Health " + G.health;
-  ui.st.camels.textContent = "Camels " + G.camels;
+  ui.st.camels.textContent = (actNum() === 2 ? "Horses " : "Camels ") + G.camels;
   ui.st.insight.textContent = "Insight " + G.insight;
   ui.st.scrolls.textContent = "Scrolls " + G.scrolls.length;
   ui.st.food.className = "stat" + (G.food <= 5 ? " t-red" : "");
@@ -203,8 +226,8 @@ function showTitle() {
   const saveCity = save && CITY_BY_ID[(save.route || DEFAULT_ROUTE)[save.cityIndex]];
   if (saveCity) {
     addChoice("⟲  Continue your journey — Day " + save.day + ", near " + saveCity.name, () => {
-      // older saves may predate difficulty settings and branching routes
-      G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {},
+      // older saves may predate difficulty settings, branching routes and acts
+      G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {}, act: 1,
                           route: DEFAULT_ROUTE.slice(), legOverrides: {} }, save);
       if (G.legDist > 0) { updateStats(); pauseTravel(); }
       else arriveAtCity(false);
@@ -216,14 +239,33 @@ function showTitle() {
   ui.hint.textContent = "keys: 1–9 choose · C/M/J panels";
 }
 
+let pendingAct = 1;
+
 function chooseMode() {
   setSpeaker("CHOOSE YOUR ROAD");
-  setText("Three ways to walk the Silk Road of Ideas.");
+  setText("Three ways to walk the Silk Road of Ideas." +
+    (act2Unlocked() ? "" : "\n\nReach Rome once to unlock Act II: The River of Time — the road's ideas followed through eleven more centuries."));
   clearChoices();
-  addChoice("🐫  " + GAME_MODES.journey.label + " — " + GAME_MODES.journey.blurb, chooseDifficulty);
+  addChoice("🐫  " + GAME_MODES.journey.label + " — " + GAME_MODES.journey.blurb, () => {
+    if (act2Unlocked()) chooseAct();
+    else { pendingAct = 1; chooseDifficulty(); }
+  });
   addChoice("🐎  " + GAME_MODES.envoy.label + " — " + GAME_MODES.envoy.blurb, startEnvoy);
   addChoice("🍷  " + GAME_MODES.symposium.label + " — " + GAME_MODES.symposium.blurb, startSymposium);
   addChoice("⟵  Back", showTitle);
+}
+
+function chooseAct() {
+  setSpeaker("TWO ROADS, ONE THREAD");
+  setText("Act I crosses the earth; Act II crosses the centuries. The scrolls you carried in the first act are the ones you follow in the second.");
+  clearChoices();
+  addChoice("🏛  Act I — The Silk Road  ·  Chang'an to Rome, 100 BCE  (" + ACT_CONN[1] + " Connections)", () => {
+    pendingAct = 1; chooseDifficulty();
+  });
+  addChoice("⏳  Act II — The River of Time  ·  Baghdad 850 to New York 1950  (" + ACT_CONN[2] + " Connections)", () => {
+    pendingAct = 2; chooseDifficulty();
+  });
+  addChoice("⟵  Back", chooseMode);
 }
 
 function chooseDifficulty() {
@@ -232,9 +274,9 @@ function chooseDifficulty() {
   clearChoices();
   Object.keys(DIFFICULTIES).forEach(key => {
     const d = DIFFICULTIES[key];
-    addChoice(d.label + " — " + d.blurb, () => { newGame(key); arriveAtCity(true); });
+    addChoice(d.label + " — " + d.blurb, () => { newGame(key, pendingAct); arriveAtCity(true); });
   });
-  addChoice("⟵  Back", chooseMode);
+  addChoice("⟵  Back", act2Unlocked() ? chooseAct : chooseMode);
 }
 
 function startEnvoy() {
@@ -278,7 +320,8 @@ function arriveAtCity(first) {
   journal(first ? "The journey begins in " + c.name + "." : "Reached " + c.name + ".");
   if (c.id === "taxila") unlockAch("high_road");
   if (c.id === "alexandria") unlockAch("lighthouse");
-  if (c.id === "rome" && G.health <= 25) unlockAch("by_a_thread");
+  if (c.id === "concord") unlockAch("walden");
+  if (c.id === currentAct().end && G.health <= 25) unlockAch("by_a_thread");
   updateStats();
   saveGame();
   sfx.arrive();
@@ -306,9 +349,10 @@ function cityMenu() {
     applyEffect({ silver: -10, health: 15, days: 1 });
     setText("A real bed, a real meal, and a night without watching for bandits. You wake restored.");
   });
-  const det = DETOURS.find(d => d.from === c.id && !G.route.includes(d.via));
-  if (c.id === "rome") {
-    if (G.met["senator"]) addChoice("★  Conclude your journey", showVictory);
+  const A = currentAct();
+  const det = A.detours.find(d => d.from === c.id && !G.route.includes(d.via));
+  if (c.id === A.end) {
+    if (G.met[A.finale]) addChoice("★  Conclude your journey", showVictory);
   } else if (det) {
     addChoice("⟶  Set out for " + nextCity().name + "  (" + c.distToNext + " km of " + c.terrainToNext + ")",
       startTravel);
@@ -379,14 +423,14 @@ function finishDialogue() {
   G.scrolls.push(p.connection);
   journal("Met " + p.name + " and recorded “" + p.connection.title + "”.");
   if (G.scrolls.length === 1) unlockAch("first_scroll");
-  if (G.scrolls.length === TOTAL_CONNECTIONS) unlockAch("sage");
+  if (G.scrolls.length === ACT_CONN[actNum()]) unlockAch(actNum() === 2 ? "sage_of_ages" : "sage");
   updateStats();
   saveGame();
   sfx.scroll();
   setSpeaker("✦ CONNECTION RECORDED IN YOUR CODEX ✦");
   setText("「 " + p.connection.title + " 」\n\n" + p.connection.text);
   clearChoices();
-  if (city().id === "rome" && dialogue.pid === "senator") {
+  if (city().id === currentAct().end && dialogue.pid === currentAct().finale) {
     addChoice("★  Conclude your journey", showVictory);
   } else {
     addChoice("⟵  Back to the city", cityMenu);
@@ -426,10 +470,12 @@ function marketMenu() {
     applyEffect({ silver: -pw, water: 5 });
     marketSay("The waterseller blesses you in two languages, keeping his options open.");
   });
-  addChoice("Buy a pack camel — " + pc + " silver", () => {
+  addChoice("Buy a " + (actNum() === 2 ? "fresh horse" : "pack camel") + " — " + pc + " silver", () => {
     if (G.silver < pc) return marketSay("Not enough silver.");
     applyEffect({ silver: -pc, camels: 1 });
-    marketSay("It spits at you immediately. The dealer assures you this means it likes you.");
+    marketSay(actNum() === 2
+      ? "A sound animal with honest eyes. The dealer swears it once belonged to a professor, which explains nothing."
+      : "It spits at you immediately. The dealer assures you this means it likes you.");
   });
   const sold = G.soldAt[city().id];
   const canSell = G.scrolls.length > 0 && !sold;
@@ -567,6 +613,7 @@ function triggerQuiz() {
 }
 
 function flavorLine() {
+  if (actNum() === 2) return ACT2_FLAVOR[Math.floor(Math.random() * ACT2_FLAVOR.length)];
   const lines = [
     "A string of camels passes the other way, loaded with western glass and silver. The drivers trade news in passing Sogdian.",
     "You pass a wayside shrine — to which god, you honestly cannot tell. You nod to it anyway. Everyone does.",
@@ -619,7 +666,7 @@ function enterOverlay(name) {
 
 function showCodex() {
   if (!enterOverlay("CODEX")) return;
-  setSpeaker("THE CODEX OF CONNECTIONS — " + (G ? G.scrolls.length : 0) + " of " + TOTAL_CONNECTIONS + " threads found");
+  setSpeaker("THE CODEX OF CONNECTIONS — " + (G ? G.scrolls.length : 0) + " of " + ACT_CONN[actNum()] + " threads found");
   if (!G || G.scrolls.length === 0) {
     setText("The codex is empty. Seek out the philosophers in each city — every completed dialogue records a thread of connection between the world's traditions.");
   } else {
@@ -684,7 +731,7 @@ function gameOver(text) {
   sfx.danger();
   setSpeaker("THE ROAD ENDS");
   setText(text + "\n\nDays traveled: " + G.day + "   ·   Insight: " + G.insight +
-    "   ·   Connections found: " + G.scrolls.length + " of " + TOTAL_CONNECTIONS +
+    "   ·   Connections found: " + G.scrolls.length + " of " + ACT_CONN[actNum()] +
     "\n\nBut ideas do not die with their carriers. Someone will find your scrolls.");
   clearChoices();
   addChoice("✎  Read your travel journal", showJournal);
@@ -697,28 +744,44 @@ function showVictory() {
   clearSave();
   sfx.scroll();
   const isEnvoy = G.gameMode === "envoy";
+  const isAct2 = actNum() === 2;
+  const total = ACT_CONN[actNum()];
   const speedBonus = isEnvoy ? Math.max(0, (G.dayLimit - G.day) * 3) : 0;
   const score = G.insight * 2 + G.scrolls.length * 10 + Math.floor(G.health / 5) + speedBonus;
   let rank;
-  if (G.scrolls.length >= TOTAL_CONNECTIONS) rank = "SAGE OF TWO WORLDS — the full web of connections, carried intact across the earth.";
-  else if (G.scrolls.length >= Math.ceil(TOTAL_CONNECTIONS * 0.66)) rank = "MASTER OF THE ROAD — most of the great threads are in your codex.";
-  else if (G.scrolls.length >= Math.ceil(TOTAL_CONNECTIONS * 0.4)) rank = "JOURNEYING SCHOLAR — you glimpsed the web, even if some threads escaped you.";
+  if (G.scrolls.length >= total) rank = (isAct2 ? "SAGE OF THE AGES" : "SAGE OF TWO WORLDS") + " — the full web of connections, carried intact across " + (isAct2 ? "eleven centuries." : "the earth.");
+  else if (G.scrolls.length >= Math.ceil(total * 0.66)) rank = "MASTER OF THE ROAD — most of the great threads are in your codex.";
+  else if (G.scrolls.length >= Math.ceil(total * 0.4)) rank = "JOURNEYING SCHOLAR — you glimpsed the web, even if some threads escaped you.";
   else rank = "SURVIVOR OF THE ROAD — you arrived alive. The ideas, mostly, stayed home.";
   if (isEnvoy) {
     rank = "THE EMPEROR'S SWIFT — commission delivered with " + (G.dayLimit - G.day) + " days to spare (+" + speedBonus + " speed bonus).\n" + rank;
     unlockAch("envoy_win");
   }
   if (G.difficulty === DIFFICULTIES.ascetic.label) unlockAch("ascetic_win");
-  saveRecord(G.gameMode || "journey", score);
-  setSpeaker("ROME — JOURNEY'S END");
+  if (isAct2) unlockAch("reader");
+  saveRecord(isAct2 ? "journey2" : (G.gameMode || "journey"), score);
+  // any Act I victory permanently unlocks Act II
+  if (!isAct2 && !act2Unlocked()) {
+    const prog = loadStore(PROG_KEY);
+    prog.act2 = true;
+    saveStore(PROG_KEY, prog);
+    showToast("✦ Act II unlocked: The River of Time");
+  }
+  setSpeaker(isAct2 ? "NEW YORK — THE THREAD, COMPLETE" : "ROME — JOURNEY'S END");
   setText(
-    "Day " + G.day + ". You stand in the Roman forum wearing a Persian coat, quoting a Chinese sage in Greek, " +
-    "with Babylonian hours marked on the sundial behind you.\n\n" +
-    "Connections found: " + G.scrolls.length + " of " + TOTAL_CONNECTIONS + "\nInsight: " + G.insight + "    Final score: " + score +
+    (isAct2
+      ? "Day " + G.day + ". You stand in a New York library reading room. On the shelves around you: Confucius in English, " +
+        "Rumi outselling the moderns, the Gita that made Concord, Arabic numerals on every spine's catalog card.\n\n"
+      : "Day " + G.day + ". You stand in the Roman forum wearing a Persian coat, quoting a Chinese sage in Greek, " +
+        "with Babylonian hours marked on the sundial behind you.\n\n") +
+    "Connections found: " + G.scrolls.length + " of " + total + "\nInsight: " + G.insight + "    Final score: " + score +
     "\n\n" + rank +
-    "\n\nWhat the Silk Road proves is simple and enormous: no philosophy grew alone. " +
-    "Every tradition you met was already in conversation with the others — through merchants, monks, " +
-    "translators and travelers like you. The world has never not been connected."
+    (isAct2
+      ? "\n\nEleven centuries, and the finding never changed: ideas outlive their empires, their languages, and their carriers — " +
+        "but never their need for carriers. The thread is in your hands now. It always was."
+      : "\n\nWhat the Silk Road proves is simple and enormous: no philosophy grew alone. " +
+        "Every tradition you met was already in conversation with the others — through merchants, monks, " +
+        "translators and travelers like you. The world has never not been connected.")
   );
   clearChoices();
   addChoice("✦  Read your Codex of Connections", showCodex);
@@ -740,7 +803,8 @@ function shuffled(arr) {
 }
 
 function startSymposium() {
-  SYM = { order: shuffled(QUIZ), i: 0, lives: 3, score: 0, streak: 0, correct: 0 };
+  // with the full two-act question pool, each symposium is a 20-question night
+  SYM = { order: shuffled(QUIZ).slice(0, Math.min(20, QUIZ.length)), i: 0, lives: 3, score: 0, streak: 0, correct: 0 };
   mode = "SYMPOSIUM";
   ui.stats.classList.add("hidden");
   renderSymposiumQuestion();
@@ -819,9 +883,11 @@ function showRecords() {
   const rec = loadStore(REC_KEY);
   const ach = loadStore(ACH_KEY);
   const unlockedCount = ACHIEVEMENTS.filter(a => ach[a.id]).length;
+  const recordLabels = { journey: "The Journey (Act I)", journey2: "The Journey (Act II)",
+                         envoy: GAME_MODES.envoy.label, symposium: GAME_MODES.symposium.label };
   let html = '<div class="codex-entry"><h3>Best scores</h3><p>' +
-    Object.keys(GAME_MODES).map(k =>
-      GAME_MODES[k].label + ": " + (rec[k] ? rec[k] : "—")).join(" &nbsp;·&nbsp; ") +
+    Object.keys(recordLabels).map(k =>
+      recordLabels[k] + ": " + (rec[k] ? rec[k] : "—")).join(" &nbsp;·&nbsp; ") +
     "</p></div>";
   html += '<div class="codex-entry"><h3>Achievements — ' + unlockedCount + " of " + ACHIEVEMENTS.length + "</h3>" +
     ACHIEVEMENTS.map(a =>
@@ -884,8 +950,10 @@ function render(t) {
       break;
     }
     case "MAP": {
+      const A = currentAct();
       const fracDone = G && currentLeg().dist ? Math.min(1, G.legDist / currentLeg().dist) : 0;
-      drawMapScene(ctx, G ? G.route : DEFAULT_ROUTE, G ? G.cityIndex : 0, fracDone);
+      drawMapScene(ctx, G ? G.route : DEFAULT_ROUTE, G ? G.cityIndex : 0, fracDone,
+        A.points, A.cities, A.mapTitle);
       break;
     }
     case "CODEX": case "JOURNAL": {
