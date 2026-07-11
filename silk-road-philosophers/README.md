@@ -1,6 +1,6 @@
 # The Silk Road of Ideas 🐫📜
 
-**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v2.0)*
+**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v3.0 — with Act II: The River of Time)*
 
 The year is 100 BCE. The Han emperor's envoys have opened the roads west, and for the
 first time in history one connected route runs from **Chang'an to Rome**. You are a
@@ -13,6 +13,22 @@ other all along.
 Just open `index.html` in any modern browser — no build step, no dependencies, no install.
 
 To host it for free with GitHub Pages: **Settings → Pages → Deploy from branch → main → / (root)**.
+
+## Two acts, fifty philosophers
+
+- 🏛 **Act I — The Silk Road** (100 BCE): Chang'an to Rome, 23 Connections.
+- ⏳ **Act II — The River of Time** (unlocked by reaching Rome once): follow the
+  road's ideas through eleven centuries — Baghdad 850 → Bukhara → Córdoba → Konya →
+  Florence → Amsterdam → the Paris salons → Edinburgh → Königsberg → London 1860
+  (with an Atlantic detour to Concord and Walden Pond) → Vienna 1920 → New York 1950.
+  27 more Connections: Al-Kindi, Al-Khwarizmi, Hunayn ibn Ishaq, Avicenna, Al-Biruni,
+  Averroes, Maimonides, Rumi, Pico, Machiavelli, Descartes, Spinoza, Voltaire,
+  Émilie du Châtelet, Wollstonecraft, Hume, Adam Smith, Kant, Mill, Marx, Emerson,
+  Thoreau, Wittgenstein, Arendt, Du Bois, Beauvoir — and a finale with a young
+  Martin Luther King Jr. that closes the ahimsa thread begun in Taxila.
+- Act II's Connections deliberately pay off Act I's: Hume meets Nagasena's chariot,
+  Voltaire hangs Confucius on his wall, Emerson reads the Gita, Rumi retells the
+  elephant, and Avicenna's Floating Man anticipates the cogito.
 
 ## Three ways to play
 
@@ -91,11 +107,12 @@ there are zero image assets. The whole game is four small files:
 ```
 index.html      shell & layout
 style.css       pixel-era styling
-js/data.js      cities, dialogues, events, quizzes — the educational content
+js/data.js      Act I — cities, dialogues, events, quizzes
+js/data2.js     Act II — the River of Time: 12 era-stops, 27 thinkers
 js/sprites.js   procedural pixel art renderer
 js/audio.js     sound effects + generative music engine (WebAudio)
-js/game.js      state machine & game loop
-test/smoke.js   headless test: plays the entire game end to end (node test/smoke.js)
+js/game.js      state machine, acts, modes & game loop
+test/smoke.js   headless test: plays BOTH acts end to end (node test/smoke.js)
 ```
 
 ## A note on history

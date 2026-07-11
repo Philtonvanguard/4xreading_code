@@ -44,7 +44,7 @@ global.localStorage = {
 };
 
 let src = "";
-for (const f of ["js/data.js", "js/sprites.js", "js/audio.js", "js/game.js"]) {
+for (const f of ["js/data.js", "js/data2.js", "js/sprites.js", "js/audio.js", "js/game.js"]) {
   src += fs.readFileSync(path + f, "utf8") + "\n";
 }
 // expose internals for the test
@@ -56,12 +56,14 @@ module.exports = {
   showVictory, gameOver, PHILOSOPHERS, CITIES, EVENTS, QUIZ,
   ui, applyEffect, closeOverlay, showMap, showTitle,
   triggerQuiz, availableQuizzes, loadSave, saveGame, clearSave, PACES,
-  TOTAL_CONNECTIONS, DIFFICULTIES, chooseDifficulty,
+  ACT_CONN, DIFFICULTIES, chooseDifficulty,
   CITY_BY_ID, DEFAULT_ROUTE, DETOURS, currentLeg, showJournal,
   TRACKS, MOODS, toggleSound, updateMusic, get soundMode() { return soundMode; },
   GAME_MODES, ACHIEVEMENTS, startEnvoy, startSymposium, answerSymposium,
   endSymposium, showRecords, chooseMode, unlockAch, loadStore, checkDeadline,
-  ACH_KEY, REC_KEY, get SYM() { return SYM; }
+  ACH_KEY, REC_KEY, get SYM() { return SYM; },
+  currentAct, chooseAct, act2Unlocked, PROG_KEY,
+  ACT2_CITIES, ACT2_ROUTE, ACT2_DETOURS
 };
 `;
 const mod = { exports: {} };
@@ -95,61 +97,86 @@ function clickByText(sub) {
   clickChoice(i);
 }
 
-let guardCities = 0;
-while (guardCities++ < 15) {
-  const c = game.CITY_BY_ID[game.G.route[game.G.cityIndex]];
+// Visit every philosopher, buy supplies, take every detour, reach the act's end.
+function playThrough() {
+  const A = game.currentAct();
+  let guardCities = 0;
+  while (guardCities++ < 16) {
+    const c = game.CITY_BY_ID[game.G.route[game.G.cityIndex]];
 
-  // talk to each philosopher
-  for (const pid of c.philosophers) {
-    game.startDialogue(pid);
-    assert(game.mode === "DIALOGUE", "in dialogue with " + pid);
-    let guard = 0;
-    while (game.mode === "DIALOGUE" && guard++ < 30) clickChoice(0);
-    assert(game.G.met[pid], "met " + pid);
-  }
-  if (c.id === "rome") break;
-
-  // market: buy food & water & sell scroll
-  game.showMarket();
-  clickChoice(0); // food
-  clickChoice(1); // water
-  clickChoice(3); // sell scroll
-  assert(game.G.soldAt[c.id], "sold scroll at " + c.name);
-
-  // set out via the city menu, taking every detour on offer
-  game.cityMenu();
-  const det = game.DETOURS.find(d => d.from === c.id);
-  if (det) clickByText(game.CITY_BY_ID[det.via].name);
-  else clickByText("Set out");
-  assert(game.mode === "TRAVEL", "traveling from " + c.name);
-
-  // travel the leg
-  const startIdx = game.G.cityIndex;
-  let days = 0;
-  while (game.G.cityIndex === startIdx && days++ < 250) {
-    if (game.mode === "EVENT") {
-      clickChoice(0);          // resolve event
-      if (game.mode === "GAMEOVER") throw new Error("died in event at " + c.name);
-      if (game.G.cityIndex === startIdx) clickChoice(0); // continue on
+    // talk to each philosopher
+    for (const pid of c.philosophers) {
+      game.startDialogue(pid);
+      assert(game.mode === "DIALOGUE", "in dialogue with " + pid);
+      let guard = 0;
+      while (game.mode === "DIALOGUE" && guard++ < 30) clickChoice(0);
+      assert(game.G.met[pid], "met " + pid);
     }
-    if (game.mode === "TRAVEL") game.travelDayTick();
-    if (game.mode === "GAMEOVER") throw new Error("died on leg from " + c.name + " day " + game.G.day + " h" + game.G.health);
+    if (c.id === A.end) break;
+
+    // market: buy food & water & sell scroll
+    game.showMarket();
+    clickChoice(0); // food
+    clickChoice(1); // water
+    clickChoice(3); // sell scroll
+    assert(game.G.soldAt[c.id], "sold scroll at " + c.name);
+
+    // set out via the city menu, taking every detour on offer
+    game.cityMenu();
+    const det = A.detours.find(d => d.from === c.id);
+    if (det) clickByText(game.CITY_BY_ID[det.via].name.split(",")[0]);
+    else clickByText("Set out");
+    assert(game.mode === "TRAVEL", "traveling from " + c.name);
+
+    // travel the leg
+    const startIdx = game.G.cityIndex;
+    let days = 0;
+    while (game.G.cityIndex === startIdx && days++ < 300) {
+      if (game.mode === "EVENT") {
+        clickChoice(0);          // resolve event
+        if (game.mode === "GAMEOVER") throw new Error("died in event at " + c.name);
+        if (game.G.cityIndex === startIdx) clickChoice(0); // continue on
+      }
+      if (game.mode === "TRAVEL") game.travelDayTick();
+      if (game.mode === "GAMEOVER") throw new Error("died on leg from " + c.name + " day " + game.G.day + " h" + game.G.health);
+    }
+    assert(game.G.cityIndex === startIdx + 1, "arrived past " + c.name);
   }
-  assert(game.G.cityIndex === startIdx + 1, "arrived past " + c.name);
 }
+
+playThrough();
 assert(game.G.route.includes("taxila"), "route includes the Taxila detour");
 assert(game.G.route.includes("alexandria"), "route includes the Alexandria detour");
 
-assert(game.G.scrolls.length === game.TOTAL_CONNECTIONS,
-  "collected all " + game.TOTAL_CONNECTIONS + " scrolls, got " + game.G.scrolls.length);
+assert(game.G.scrolls.length === game.ACT_CONN[1],
+  "collected all " + game.ACT_CONN[1] + " scrolls, got " + game.G.scrolls.length);
 assert(game.loadStore(game.ACH_KEY).sage, "sage achievement unlocked");
 assert(game.loadStore(game.ACH_KEY).high_road, "high_road achievement unlocked");
 assert(game.loadStore(game.ACH_KEY).lighthouse, "lighthouse achievement unlocked");
 assert(game.loadStore(game.ACH_KEY).first_scroll, "first_scroll achievement unlocked");
+assert(!game.act2Unlocked(), "Act II locked before first victory");
 game.showVictory();
 assert(game.mode === "VICTORY", "victory shown");
-assert(ui.text.textContent.includes(game.TOTAL_CONNECTIONS + " of " + game.TOTAL_CONNECTIONS), "victory shows full count");
+assert(ui.text.textContent.includes(game.ACT_CONN[1] + " of " + game.ACT_CONN[1]), "victory shows full count");
 assert(ui.text.textContent.includes("SAGE OF TWO WORLDS"), "full collection earns top rank");
+assert(game.act2Unlocked(), "Act I victory unlocks Act II");
+
+// ---- ACT II: the River of Time, full run with the Concord detour ----
+game.newGame(undefined, 2);
+game.arriveAtCity(true);
+assert(game.G.act === 2, "act 2 set");
+assert(game.G.route[0] === "baghdad", "act 2 starts in Baghdad");
+assert(game.currentAct().end === "newyork", "act 2 ends in New York");
+playThrough();
+assert(game.G.route.includes("concord"), "route includes the Concord detour");
+assert(game.G.scrolls.length === game.ACT_CONN[2],
+  "collected all " + game.ACT_CONN[2] + " act 2 scrolls, got " + game.G.scrolls.length);
+assert(game.loadStore(game.ACH_KEY).walden, "walden achievement unlocked");
+assert(game.loadStore(game.ACH_KEY).sage_of_ages, "sage_of_ages achievement unlocked");
+game.showVictory();
+assert(ui.text.textContent.includes("SAGE OF THE AGES"), "act 2 full collection earns top rank");
+assert(game.loadStore(game.ACH_KEY).reader, "reader achievement unlocked");
+assert(game.loadStore(game.REC_KEY).journey2 > 0, "act 2 record saved");
 
 // codex overlay round-trip
 game.showCodex();
@@ -240,8 +267,13 @@ clickByText("Alexandria");
 assert(game.G.route[game.G.cityIndex + 1] === "alexandria", "sea detour inserts Alexandria next");
 assert(game.currentLeg().terrain === "sea", "Alexandria leg is by sea");
 
+// ---- roster totals across both acts ----
+assert(game.ACT_CONN[1] === 23, "Act I has 23 connections");
+assert(game.ACT_CONN[2] === 27, "Act II has 27 connections");
+assert(Object.keys(game.PHILOSOPHERS).length === 50, "50 philosophers in the world");
+assert(game.QUIZ.length === 49, "49 campfire questions (one per philosopher except the finale)");
+
 // ---- difficulty levels ----
-assert(game.TOTAL_CONNECTIONS === 23, "23 philosophers in the world");
 for (const key of Object.keys(game.DIFFICULTIES)) {
   const d = game.DIFFICULTIES[key];
   game.newGame(key);
@@ -278,6 +310,14 @@ assert(ui.choices.children.length === 4, "mode screen offers 3 modes + back");
 assert(ui.choices.children.some(b => b.textContent.includes("Envoy")), "envoy mode offered");
 assert(ui.choices.children.some(b => b.textContent.includes("Symposium")), "symposium mode offered");
 
+// ---- the unlocked act picker is the real door into the DLC ----
+clickByText("The Journey");
+assert(ui.choices.children.some(b => b.textContent.includes("Act II")), "act picker shows Act II after unlock");
+clickByText("Act II");
+assert(ui.choices.children.some(b => b.textContent.includes("Ascetic")), "act picker leads to difficulty select");
+clickByText("Merchant");
+assert(game.G.act === 2 && game.G.route[0] === "baghdad", "picker starts an Act II journey in Baghdad");
+
 // ---- the Imperial Envoy: deadline ends the run ----
 game.startEnvoy();
 assert(game.G.gameMode === "envoy", "envoy mode set");
@@ -299,7 +339,7 @@ assert(game.mode === "GAMEOVER", "resting past the deadline ends the run");
 game.startSymposium();
 assert(game.mode === "SYMPOSIUM", "symposium starts");
 const totalQ = game.SYM.order.length;
-assert(totalQ === game.QUIZ.length, "symposium asks every question");
+assert(totalQ === Math.min(20, game.QUIZ.length), "symposium is a 20-question night");
 while (game.SYM.i < totalQ && game.SYM.lives > 0) {
   const quiz = game.SYM.order[game.SYM.i];
   clickChoice(quiz.correct);
