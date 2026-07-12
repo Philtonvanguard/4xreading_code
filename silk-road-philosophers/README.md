@@ -1,6 +1,6 @@
 # The Silk Road of Ideas 🐫📜
 
-**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v3.0 — with Act II: The River of Time)*
+**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v4.0 — with Act III: The Mother Road, and the Whisper stone)*
 
 The year is 100 BCE. The Han emperor's envoys have opened the roads west, and for the
 first time in history one connected route runs from **Chang'an to Rome**. You are a
@@ -13,6 +13,22 @@ other all along.
 Just open `index.html` in any modern browser — no build step, no dependencies, no install.
 
 To host it for free with GitHub Pages: **Settings → Pages → Deploy from branch → main → / (root)**.
+
+## Three acts, sixty-three philosophers
+
+- 🌍 **Act III — The Mother Road** (unlocked by completing Act II): the oldest road of
+  all — the one humanity itself first walked, south to north out of Africa. The Cape →
+  Great Zimbabwe → Kilwa → Lalibela → Meroë → Thebes → Cairo (with a salt-caravan detour
+  to Timbuktu) → Hippo. Ubuntu at the fireside court; Ibn Battuta on the monsoon road;
+  Zera Yacob reasoning in a cave in Descartes' own decade; the undeciphered library of
+  Meroë; the Maxims of Ptahhotep — the oldest wisdom book on earth; Ibn Khaldun inventing
+  three sciences; Ahmad Baba's legal war on slavery; and a finale with Augustine, whose
+  *si fallor, sum* is the cogito's oldest known ancestor.
+- ✦ **Four of Act III's teachers are hidden.** Other philosophers whisper you their
+  passwords; speak them into the **Whisper stone** (the ✦ button, or the ` key) to be
+  received. The Whisper stone also accepts… other words. Resource cheats work, but the
+  Hall of Records looks away, smiling. Unlock words ("the river of time", "the mother
+  road", "all roads") open acts without shame.
 
 ## Two acts, fifty philosophers
 
@@ -109,10 +125,11 @@ index.html      shell & layout
 style.css       pixel-era styling
 js/data.js      Act I — cities, dialogues, events, quizzes
 js/data2.js     Act II — the River of Time: 12 era-stops, 27 thinkers
+js/data3.js     Act III — the Mother Road: 9 stops, 13 thinkers (4 hidden), the cheats
 js/sprites.js   procedural pixel art renderer
 js/audio.js     sound effects + generative music engine (WebAudio)
-js/game.js      state machine, acts, modes & game loop
-test/smoke.js   headless test: plays BOTH acts end to end (node test/smoke.js)
+js/game.js      state machine, acts, modes, the Whisper stone & game loop
+test/smoke.js   headless test: plays ALL THREE acts end to end (node test/smoke.js)
 ```
 
 ## A note on history

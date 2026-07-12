@@ -227,11 +227,22 @@ function drawCityScene(ctx, city, seed) {
     london:   { wall: "#9a8a75", roof: "#3a3a3a", pagoda: false },
     concord:  { wall: "#e8e0d0", roof: "#6b4a2a", pagoda: false },
     vienna:   { wall: "#e5d8b5", roof: "#5a6b5a", pagoda: false },
-    newyork:  { wall: "#6a7080", roof: "#4a5060", pagoda: false }
+    newyork:  { wall: "#6a7080", roof: "#4a5060", pagoda: false },
+    // Act III skylines
+    cape:     { wall: "#c9a05a", roof: "#8a7355", pagoda: false },
+    zimbabwe: { wall: "#7a7a70", roof: "#5a5a52", pagoda: false },
+    kilwa:    { wall: "#e8dcc8", roof: "#4a7d8a", pagoda: false },
+    lalibela: { wall: "#b08a6a", roof: "#8a6a4a", pagoda: false },
+    meroe:    { wall: "#d9b372", roof: "#b08648", pagoda: false },
+    thebes:   { wall: "#e0c9a0", roof: "#c9a05a", pagoda: false },
+    cairo:    { wall: "#d9c090", roof: "#3f7d5c", pagoda: false },
+    timbuktu: { wall: "#c98850", roof: "#a06a35", pagoda: false },
+    hippo:    { wall: "#efe8d8", roof: "#a04030", pagoda: false }
   };
-  const DOME_CITIES = ["samarkand", "ctesiphon", "taxila", "baghdad", "bukhara", "konya", "cordoba"];
-  const COLUMN_CITIES = ["rome", "antioch", "palmyra", "alexandria", "florence", "paris", "vienna"];
+  const DOME_CITIES = ["samarkand", "ctesiphon", "taxila", "baghdad", "bukhara", "konya", "cordoba", "cape", "kilwa", "lalibela", "cairo"];
+  const COLUMN_CITIES = ["rome", "antioch", "palmyra", "alexandria", "florence", "paris", "vienna", "hippo"];
   const GABLE_CITIES = ["amsterdam", "concord", "london", "edinburgh", "konigsberg"];
+  const PYRAMID_CITIES = ["meroe", "thebes"];
   const st = styles[city.id] || styles.kashgar;
   const tall = city.id === "newyork";
 
@@ -248,6 +259,8 @@ function drawCityScene(ctx, city, seed) {
     } else if (tall) {
       px(ctx, bx + 2, by - 3, bw - 4, 3, st.roof); // setback crown
       if (bh > 90) px(ctx, bx + Math.floor(bw / 2) - 1, by - 12, 2, 9, st.roof); // spire
+    } else if (PYRAMID_CITIES.includes(city.id)) {
+      drawTriangle(ctx, bx - 2, by + 6, bw + 4, 20, st.roof); // steep Nubian pyramids
     } else if (GABLE_CITIES.includes(city.id)) {
       drawTriangle(ctx, bx - 1, by + 2, bw + 2, 10, st.roof); // gabled roofline
     } else if (DOME_CITIES.includes(city.id)) {
