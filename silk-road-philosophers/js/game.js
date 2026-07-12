@@ -42,13 +42,19 @@ function countConnections(cities) {
 const ACT_CONN = {
   1: countConnections(CITIES),
   2: countConnections(ACT2_CITIES),
-  3: countConnections(ACT3_CITIES)
+  3: countConnections(ACT3_CITIES),
+  4: countConnections(ACT4_CITIES)
 };
 
 function actNum() { return (G && G.act) || 1; }
 
 function currentAct() {
   const n = actNum();
+  if (n === 4) return {
+    num: 4, cities: ACT4_CITIES, route: ACT4_ROUTE, detours: ACT4_DETOURS,
+    points: MAP_POINTS4, mapTitle: "THE UNCROSSED SEA  ·  THE AMERICAS",
+    end: "cusco", finale: "amauta", title: "Act IV — The Uncrossed Sea"
+  };
   if (n === 3) return {
     num: 3, cities: ACT3_CITIES, route: ACT3_ROUTE, detours: ACT3_DETOURS,
     points: MAP_POINTS3, mapTitle: "THE MOTHER ROAD  ·  CAPE TO CARTHAGE",
@@ -69,10 +75,11 @@ function currentAct() {
 const PROG_KEY = "silk_road_progress";
 function act2Unlocked() { return !!loadStore(PROG_KEY).act2; }
 function act3Unlocked() { return !!loadStore(PROG_KEY).act3; }
+function act4Unlocked() { return !!loadStore(PROG_KEY).act4; }
 
 function newGame(diffKey, act) {
   const diff = DIFFICULTIES[diffKey] || DIFFICULTIES.merchant;
-  const routes = { 1: DEFAULT_ROUTE, 2: ACT2_ROUTE, 3: ACT3_ROUTE };
+  const routes = { 1: DEFAULT_ROUTE, 2: ACT2_ROUTE, 3: ACT3_ROUTE, 4: ACT4_ROUTE };
   G = Object.assign({}, START_STATE, diff.start, {
     act: act || 1,
     cityIndex: 0,
@@ -184,6 +191,7 @@ function processWhisper(raw) {
     const prog = loadStore(PROG_KEY);
     if (e.unlock === "act2" || e.unlock === "all") prog.act2 = true;
     if (e.unlock === "act3" || e.unlock === "all") prog.act3 = true;
+    if (e.unlock === "act4" || e.unlock === "all") prog.act4 = true;
     saveStore(PROG_KEY, prog);
     if (mode === "TITLE") showTitle();
     return cheat.msg;
@@ -259,7 +267,7 @@ function updateStats() {
   ui.st.water.textContent = "Water " + G.water;
   ui.st.silver.textContent = "Silver " + G.silver;
   ui.st.health.textContent = "Health " + G.health;
-  ui.st.camels.textContent = ({ 1: "Camels ", 2: "Horses ", 3: "Oxen " })[actNum()] + G.camels;
+  ui.st.camels.textContent = ({ 1: "Camels ", 2: "Horses ", 3: "Oxen ", 4: "Llamas " })[actNum()] + G.camels;
   ui.st.insight.textContent = "Insight " + G.insight;
   ui.st.scrolls.textContent = "Scrolls " + G.scrolls.length;
   ui.st.food.className = "stat" + (G.food <= 5 ? " t-red" : "");
@@ -346,6 +354,11 @@ function chooseAct() {
   } else {
     addChoice("🔒  Act III — The Mother Road  ·  complete Act II to walk it", () => {
       setText("The oldest road opens only to those who have followed the thread through the centuries first. Complete Act II — Baghdad to New York — and the Mother Road will be waiting.");
+    });
+  }
+  if (act4Unlocked()) {
+    addChoice("🛶  Act IV — The Uncrossed Sea  ·  the Americas  (" + ACT_CONN[4] + " Connections — the roads never reached them)", () => {
+      pendingAct = 4; chooseDifficulty();
     });
   }
   addChoice("⟵  Back", chooseMode);
@@ -514,12 +527,14 @@ function finishDialogue() {
   journal("Met " + p.name + " and recorded “" + p.connection.title + "”.");
   if (G.scrolls.length === 1) unlockAch("first_scroll");
   if (G.scrolls.length === ACT_CONN[actNum()]) {
-    unlockAch(actNum() === 3 ? "sage_of_source" : (actNum() === 2 ? "sage_of_ages" : "sage"));
+    const sageAch = { 1: "sage", 2: "sage_of_ages", 3: "sage_of_source" }[actNum()];
+    if (sageAch) unlockAch(sageAch);
   }
   if (p.secret) {
     const secretsMet = Object.keys(PHILOSOPHERS).filter(id => PHILOSOPHERS[id].secret && G.met[id]).length;
     if (secretsMet >= 4) unlockAch("keeper_of_secrets");
   }
+  if (G.met.socrates && G.met.marcus && G.met.plutarch) unlockAch("old_ghosts");
   updateStats();
   saveGame();
   sfx.scroll();
@@ -566,14 +581,15 @@ function marketMenu() {
     applyEffect({ silver: -pw, water: 5 });
     marketSay("The waterseller blesses you in two languages, keeping his options open.");
   });
-  const beast = { 1: "pack camel", 2: "fresh horse", 3: "trek ox" }[actNum()];
+  const beast = { 1: "pack camel", 2: "fresh horse", 3: "trek ox", 4: "llama" }[actNum()];
   addChoice("Buy a " + beast + " — " + pc + " silver", () => {
     if (G.silver < pc) return marketSay("Not enough silver.");
     applyEffect({ silver: -pc, camels: 1 });
     marketSay({
       1: "It spits at you immediately. The dealer assures you this means it likes you.",
       2: "A sound animal with honest eyes. The dealer swears it once belonged to a professor, which explains nothing.",
-      3: "Broad-backed and unhurried — an animal with the temperament of a good elder. It regards the road ahead without opinion."
+      3: "Broad-backed and unhurried — an animal with the temperament of a good elder. It regards the road ahead without opinion.",
+      4: "It looks at you down the full length of its nose, weighs your character, and consents. The herder says that is the fastest approval she has ever seen."
     }[actNum()]);
   });
   const sold = G.soldAt[city().id];
@@ -712,7 +728,8 @@ function triggerQuiz() {
 }
 
 function flavorLine() {
-  if (actNum() === 2) return ACT2_FLAVOR[Math.floor(Math.random() * ACT2_FLAVOR.length)];
+  const actFlavors = { 2: ACT2_FLAVOR, 3: ACT3_FLAVOR, 4: ACT4_FLAVOR }[actNum()];
+  if (actFlavors) return actFlavors[Math.floor(Math.random() * actFlavors.length)];
   const lines = [
     "A string of camels passes the other way, loaded with western glass and silver. The drivers trade news in passing Sogdian.",
     "You pass a wayside shrine — to which god, you honestly cannot tell. You nod to it anyway. Everyone does.",
@@ -847,8 +864,8 @@ function showVictory() {
   const total = ACT_CONN[act];
   const speedBonus = isEnvoy ? Math.max(0, (G.dayLimit - G.day) * 3) : 0;
   const score = G.insight * 2 + G.scrolls.length * 10 + Math.floor(G.health / 5) + speedBonus;
-  const sageNames = { 1: "SAGE OF TWO WORLDS", 2: "SAGE OF THE AGES", 3: "SAGE OF THE SOURCE" };
-  const sageSpans = { 1: "the earth.", 2: "eleven centuries.", 3: "the whole continent of beginnings — secrets and all." };
+  const sageNames = { 1: "SAGE OF TWO WORLDS", 2: "SAGE OF THE AGES", 3: "SAGE OF THE SOURCE", 4: "SAGE OF THE UNCROSSED SEA" };
+  const sageSpans = { 1: "the earth.", 2: "eleven centuries.", 3: "the whole continent of beginnings — secrets and all.", 4: "an ocean no idea ever crossed — until you carried yours over on a page." };
   let rank;
   if (G.scrolls.length >= total) rank = sageNames[act] + " — the full web of connections, carried intact across " + sageSpans[act];
   else if (G.scrolls.length >= Math.ceil(total * 0.66)) rank = "MASTER OF THE ROAD — most of the great threads are in your codex.";
@@ -861,10 +878,11 @@ function showVictory() {
   if (G.difficulty === DIFFICULTIES.ascetic.label) unlockAch("ascetic_win");
   if (act === 2) unlockAch("reader");
   if (act === 3) unlockAch("mother_road");
+  if (act === 4) unlockAch("fourth_road");
   if (G.cheated) {
     rank += "\n\n✦ (This journey was aided by whispered words. The Hall of Records looks away, smiling.)";
   } else {
-    saveRecord(act === 3 ? "journey3" : (act === 2 ? "journey2" : (G.gameMode || "journey")), score);
+    saveRecord({ 1: (G.gameMode || "journey"), 2: "journey2", 3: "journey3", 4: "journey4" }[act], score);
   }
   // victories open the next road
   const prog = loadStore(PROG_KEY);
@@ -874,11 +892,15 @@ function showVictory() {
   } else if (act === 2 && !prog.act3) {
     prog.act3 = true; saveStore(PROG_KEY, prog);
     showToast("✦ Act III unlocked: The Mother Road");
+  } else if (act === 3 && !prog.act4) {
+    prog.act4 = true; saveStore(PROG_KEY, prog);
+    showToast("✦ A fourth road opens: The Uncrossed Sea");
   }
   const headlines = {
     1: "ROME — JOURNEY'S END",
     2: "NEW YORK — THE THREAD, COMPLETE",
-    3: "HIPPO — THE SOURCE AND THE SEA"
+    3: "HIPPO — THE SOURCE AND THE SEA",
+    4: "CUSCO — THE NAVEL OF THE OTHER WORLD"
   };
   const scenes = {
     1: "Day " + G.day + ". You stand in the Roman forum wearing a Persian coat, quoting a Chinese sage in Greek, " +
@@ -886,7 +908,9 @@ function showVictory() {
     2: "Day " + G.day + ". You stand in a New York library reading room. On the shelves around you: Confucius in English, " +
        "Rumi outselling the moderns, the Gita that made Concord, Arabic numerals on every spine's catalog card.\n\n",
     3: "Day " + G.day + ". You stand on the harbor wall at Hippo with the whole continent at your back — the fireside courts, " +
-       "the stone walls, the cave of inquiry, the unread library, the oldest book, the whispered songs.\n\n"
+       "the stone walls, the cave of inquiry, the unread library, the oldest book, the whispered songs.\n\n",
+    4: "Day " + G.day + ". You stand in the navel of the four quarters, holding a codex full of a world this world has never heard of — " +
+       "and everywhere you showed it, the amautas nodded at their own reflections.\n\n"
   };
   const codas = {
     1: "\n\nWhat the Silk Road proves is simple and enormous: no philosophy grew alone. " +
@@ -896,7 +920,10 @@ function showVictory() {
        "but never their need for carriers. The thread is in your hands now. It always was.",
     3: "\n\nThe Mother Road's teaching is the deepest of the three: every road in your codex is a branch of this one. " +
        "Humanity's first journey was out of Africa; philosophy's longest journey is inward; and both roads, walked honestly, " +
-       "arrive at the same bedrock. I am because we are — and we are because someone, even erring, is here."
+       "arrive at the same bedrock. I am because we are — and we are because someone, even erring, is here.",
+    4: "\n\nThe last road delivers the final verdict on all the others: wisdom was never cargo. The golden rule, the empty temple, " +
+       "the fitted stone, the kept balance — they grew here too, with no road at all. The species never needed the caravans to become wise. " +
+       "It needed them to discover it already was — everywhere, all along. There was never an unconnected mind."
   };
   setSpeaker(headlines[act]);
   setText(
@@ -1005,7 +1032,7 @@ function showRecords() {
   const ach = loadStore(ACH_KEY);
   const unlockedCount = ACHIEVEMENTS.filter(a => ach[a.id]).length;
   const recordLabels = { journey: "The Journey (Act I)", journey2: "The Journey (Act II)",
-                         journey3: "The Journey (Act III)",
+                         journey3: "The Journey (Act III)", journey4: "The Journey (Act IV)",
                          envoy: GAME_MODES.envoy.label, symposium: GAME_MODES.symposium.label };
   let html = '<div class="codex-entry"><h3>Best scores</h3><p>' +
     Object.keys(recordLabels).map(k =>

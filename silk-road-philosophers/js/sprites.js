@@ -237,12 +237,16 @@ function drawCityScene(ctx, city, seed) {
     thebes:   { wall: "#e0c9a0", roof: "#c9a05a", pagoda: false },
     cairo:    { wall: "#d9c090", roof: "#3f7d5c", pagoda: false },
     timbuktu: { wall: "#c98850", roof: "#a06a35", pagoda: false },
-    hippo:    { wall: "#efe8d8", roof: "#a04030", pagoda: false }
+    hippo:    { wall: "#efe8d8", roof: "#a04030", pagoda: false },
+    // Act IV skylines
+    tenochtitlan: { wall: "#d9b372", roof: "#a03020", pagoda: false },
+    titicaca:     { wall: "#c9a05a", roof: "#8a7355", pagoda: false },
+    cusco:        { wall: "#8a8a80", roof: "#c9a05a", pagoda: false }
   };
-  const DOME_CITIES = ["samarkand", "ctesiphon", "taxila", "baghdad", "bukhara", "konya", "cordoba", "cape", "kilwa", "lalibela", "cairo"];
+  const DOME_CITIES = ["samarkand", "ctesiphon", "taxila", "baghdad", "bukhara", "konya", "cordoba", "cape", "kilwa", "lalibela", "cairo", "titicaca"];
   const COLUMN_CITIES = ["rome", "antioch", "palmyra", "alexandria", "florence", "paris", "vienna", "hippo"];
   const GABLE_CITIES = ["amsterdam", "concord", "london", "edinburgh", "konigsberg"];
-  const PYRAMID_CITIES = ["meroe", "thebes"];
+  const PYRAMID_CITIES = ["meroe", "thebes", "tenochtitlan"];
   const st = styles[city.id] || styles.kashgar;
   const tall = city.id === "newyork";
 

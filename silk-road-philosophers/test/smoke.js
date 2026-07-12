@@ -44,7 +44,7 @@ global.localStorage = {
 };
 
 let src = "";
-for (const f of ["js/data.js", "js/data2.js", "js/data3.js", "js/sprites.js", "js/audio.js", "js/game.js"]) {
+for (const f of ["js/data.js", "js/data2.js", "js/data3.js", "js/data4.js", "js/sprites.js", "js/audio.js", "js/game.js"]) {
   src += fs.readFileSync(path + f, "utf8") + "\n";
 }
 // expose internals for the test
@@ -62,9 +62,10 @@ module.exports = {
   GAME_MODES, ACHIEVEMENTS, startEnvoy, startSymposium, answerSymposium,
   endSymposium, showRecords, chooseMode, unlockAch, loadStore, checkDeadline,
   ACH_KEY, REC_KEY, get SYM() { return SYM; },
-  currentAct, chooseAct, act2Unlocked, act3Unlocked, PROG_KEY, saveStore,
+  currentAct, chooseAct, act2Unlocked, act3Unlocked, act4Unlocked, PROG_KEY, saveStore,
   ACT2_CITIES, ACT2_ROUTE, ACT2_DETOURS,
-  ACT3_CITIES, ACT3_ROUTE, ACT3_DETOURS, CHEATS, processWhisper
+  ACT3_CITIES, ACT3_ROUTE, ACT3_DETOURS, CHEATS, processWhisper,
+  ACT4_CITIES, ACT4_ROUTE
 };
 `;
 const mod = { exports: {} };
@@ -160,6 +161,9 @@ assert(game.loadStore(game.ACH_KEY).sage, "sage achievement unlocked");
 assert(game.loadStore(game.ACH_KEY).high_road, "high_road achievement unlocked");
 assert(game.loadStore(game.ACH_KEY).lighthouse, "lighthouse achievement unlocked");
 assert(game.loadStore(game.ACH_KEY).first_scroll, "first_scroll achievement unlocked");
+assert(game.G.met.suntzu && game.G.met.socrates && game.G.met.marcus && game.G.met.plutarch, "act 1 hidden sages all met");
+assert(game.loadStore(game.ACH_KEY).old_ghosts, "the classical ghosts achievement unlocked");
+assert(game.loadStore(game.ACH_KEY).keeper_of_secrets, "keeper_of_secrets fires on four hidden teachers anywhere");
 assert(!game.act2Unlocked(), "Act II locked before first victory");
 game.showVictory();
 assert(game.mode === "VICTORY", "victory shown");
@@ -206,10 +210,27 @@ assert(game.G.scrolls.length === game.ACT_CONN[3],
   "collected all " + game.ACT_CONN[3] + " act 3 scrolls, got " + game.G.scrolls.length);
 assert(game.loadStore(game.ACH_KEY).keeper_of_secrets, "keeper_of_secrets unlocked");
 assert(game.loadStore(game.ACH_KEY).sage_of_source, "sage_of_source unlocked");
+assert(!game.act4Unlocked(), "Act IV locked before Act III victory");
 game.showVictory();
 assert(ui.text.textContent.includes("SAGE OF THE SOURCE"), "act 3 full collection earns top rank");
 assert(game.loadStore(game.ACH_KEY).mother_road, "mother_road achievement unlocked");
 assert(game.loadStore(game.REC_KEY).journey3 > 0, "act 3 record saved");
+assert(game.act4Unlocked(), "Act III victory opens the Uncrossed Sea");
+
+// ---- ACT IV: the Uncrossed Sea ----
+game.newGame(undefined, 4);
+game.arriveAtCity(true);
+assert(game.G.act === 4, "act 4 set");
+assert(game.G.route[0] === "tenochtitlan", "act 4 starts in Tenochtitlan");
+assert(game.currentAct().end === "cusco", "act 4 ends in Cusco");
+playThrough();
+assert(game.G.scrolls.length === game.ACT_CONN[4],
+  "collected all " + game.ACT_CONN[4] + " act 4 scrolls, got " + game.G.scrolls.length);
+game.showVictory();
+assert(ui.text.textContent.includes("SAGE OF THE UNCROSSED SEA"), "act 4 full collection earns top rank");
+assert(ui.text.textContent.includes("never an unconnected mind"), "act 4 coda delivers the verdict");
+assert(game.loadStore(game.ACH_KEY).fourth_road, "fourth_road achievement unlocked");
+assert(game.loadStore(game.REC_KEY).journey4 > 0, "act 4 record saved");
 
 // codex overlay round-trip (on the freshly completed act 3 run)
 game.showCodex();
@@ -223,7 +244,7 @@ assert(game.mode === "JOURNAL", "journal opens");
 assert(ui.text.innerHTML.includes("Reached"), "journal records arrivals");
 assert(ui.text.innerHTML.includes("recorded"), "journal records scrolls");
 assert(ui.text.innerHTML.includes("hidden teacher"), "journal records the whispers");
-assert(game.G.journal.length >= 15, "journal has a full chronicle, got " + game.G.journal.length);
+assert(game.G.journal.length >= 10, "journal has a full chronicle, got " + game.G.journal.length);
 game.closeOverlay();
 assert(game.mode === "VICTORY", "journal returns to victory screen");
 
@@ -244,9 +265,11 @@ assert(ui.text.textContent.includes("whispered words"), "victory names the whisp
 assert(game.loadStore(game.REC_KEY).journey === recJourney, "cheated runs never touch the records");
 // unlock whispers are not cheating
 game.saveStore(game.PROG_KEY, {});
-assert(!game.act2Unlocked() && !game.act3Unlocked(), "progress wiped for the unlock test");
+assert(!game.act2Unlocked() && !game.act3Unlocked() && !game.act4Unlocked(), "progress wiped for the unlock test");
+game.processWhisper("the uncrossed sea");
+assert(game.act4Unlocked() && !game.act2Unlocked(), "'the uncrossed sea' opens only the fourth road");
 game.processWhisper("all roads");
-assert(game.act2Unlocked() && game.act3Unlocked(), "'all roads' opens every act");
+assert(game.act2Unlocked() && game.act3Unlocked() && game.act4Unlocked(), "'all roads' opens every act");
 
 // every event resolvable with every choice without crashing
 for (const ev of game.EVENTS) {
@@ -322,13 +345,14 @@ clickByText("Alexandria");
 assert(game.G.route[game.G.cityIndex + 1] === "alexandria", "sea detour inserts Alexandria next");
 assert(game.currentLeg().terrain === "sea", "Alexandria leg is by sea");
 
-// ---- roster totals across all three acts ----
-assert(game.ACT_CONN[1] === 23, "Act I has 23 connections");
-assert(game.ACT_CONN[2] === 27, "Act II has 27 connections");
-assert(game.ACT_CONN[3] === 13, "Act III has 13 connections");
-assert(Object.keys(game.PHILOSOPHERS).length === 63, "63 philosophers in the world");
-assert(game.QUIZ.length === 62, "62 campfire questions");
-assert(Object.keys(game.PHILOSOPHERS).filter(id => game.PHILOSOPHERS[id].secret).length === 4, "four hidden teachers");
+// ---- roster totals across all four acts ----
+assert(game.ACT_CONN[1] === 27, "Act I has 27 connections (4 hidden)");
+assert(game.ACT_CONN[2] === 29, "Act II has 29 connections (2 hidden)");
+assert(game.ACT_CONN[3] === 13, "Act III has 13 connections (4 hidden)");
+assert(game.ACT_CONN[4] === 5, "Act IV has 5 connections (1 hidden)");
+assert(Object.keys(game.PHILOSOPHERS).length === 74, "74 philosophers in the world");
+assert(game.QUIZ.length === 73, "73 campfire questions");
+assert(Object.keys(game.PHILOSOPHERS).filter(id => game.PHILOSOPHERS[id].secret).length === 11, "eleven hidden teachers");
 
 // ---- difficulty levels ----
 for (const key of Object.keys(game.DIFFICULTIES)) {

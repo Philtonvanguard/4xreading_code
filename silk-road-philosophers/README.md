@@ -1,6 +1,6 @@
 # The Silk Road of Ideas 🐫📜
 
-**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v4.0 — with Act III: The Mother Road, and the Whisper stone)*
+**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v5.0 — the Hidden Sages & the Uncrossed Sea: 74 philosophers, four acts)*
 
 The year is 100 BCE. The Han emperor's envoys have opened the roads west, and for the
 first time in history one connected route runs from **Chang'an to Rome**. You are a
@@ -13,6 +13,24 @@ other all along.
 Just open `index.html` in any modern browser — no build step, no dependencies, no install.
 
 To host it for free with GitHub Pages: **Settings → Pages → Deploy from branch → main → / (root)**.
+
+## The Hidden Sages (v5.0)
+
+Six more teachers hide along the first two acts, each opened by words another
+philosopher gives away in conversation — listen closely and bring them to the
+Whisper stone: **Sun Tzu** in Chang'an (Sima Qian wrote his biography, and knows the
+words), **Socrates** in Antioch (the Cynics remember their grandfather), **Plutarch**
+in Alexandria's reading room, **Marcus Aurelius** in Rome (the Stoics keep a vigil for
+their philosopher-king), **a Viking skald** by Baghdad's river gate (the Norse really
+did row the Volga to Baghdad's mints — the road's northern branch), and **Miyamoto
+Musashi** behind Amsterdam's Japanese keyhole at Dejima. Finding Socrates, Marcus and
+Plutarch in one journey earns *The Classical Ghosts*.
+
+And there are rumors of a **fourth road** — one no caravan ever reached, across a sea
+no idea ever crossed. Complete Act III, or find the right words. What waits there —
+a poet-king's empty temple, a mirror pierced through, a grammar that puts the past in
+front of you, an empire without money, and a library written in knots — is the game's
+final argument: **there was never an unconnected mind.**
 
 ## Three acts, sixty-three philosophers
 
@@ -126,10 +144,11 @@ style.css       pixel-era styling
 js/data.js      Act I — cities, dialogues, events, quizzes
 js/data2.js     Act II — the River of Time: 12 era-stops, 27 thinkers
 js/data3.js     Act III — the Mother Road: 9 stops, 13 thinkers (4 hidden), the cheats
+js/data4.js     the Hidden Sages + Act IV — the Uncrossed Sea (the Americas)
 js/sprites.js   procedural pixel art renderer
 js/audio.js     sound effects + generative music engine (WebAudio)
 js/game.js      state machine, acts, modes, the Whisper stone & game loop
-test/smoke.js   headless test: plays ALL THREE acts end to end (node test/smoke.js)
+test/smoke.js   headless test: plays ALL FOUR acts end to end (node test/smoke.js)
 ```
 
 ## A note on history
