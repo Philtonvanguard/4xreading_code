@@ -247,7 +247,7 @@ const PHILOSOPHERS = {
         text: "In my records I have set down not only our own kings but the Xiongnu of the steppe, the states of Ferghana and Parthia — peoples my colleagues call barbarians and therefore beneath history. I disagree. Do you know why?",
         choices: [
           { label: "Because one history with pieces missing is a lie of a special kind.", insight: 3,
-            reply: "Precisely. A historian who records only his own people writes a room and calls it the world. The Xiongnu shaped us as the anvil shapes the blade; leave them out and even OUR story stops making sense. Whatever you find in the west, traveler — write it down. Someone must." },
+            reply: "Precisely. A historian who records only his own people writes a room and calls it the world. The Xiongnu shaped us as the anvil shapes the blade; leave them out and even OUR story stops making sense. Whatever you find in the west, traveler — write it down. Someone must. One more record, since you honor records: I set down the life of the strategist Sun Tzu in these very annals. His students still meet quietly in this city — whisper his own line, SUPREME EXCELLENCE, and they will admit you." },
           { label: "Because barbarian wars decide our taxes.", insight: 2,
             reply: "Spoken like a clerk of the treasury — and true, as far as it goes. But follow your own logic: if their wars decide our taxes, their story is already inside our story. 'Barbarian' is just the word for a neighbor we haven't recorded yet." }
         ]
@@ -346,7 +346,7 @@ const PHILOSOPHERS = {
         text: "People think this Library is Greek. Look closer: Babylonian star-tables, Egyptian medicine, the Hebrew scriptures being turned into Greek down the hall by seventy scholars, Indian numbers arriving with every eastern fleet. What do you conclude this place actually is?",
         choices: [
           { label: "Not a Greek library — the world's memory, with a Greek doorkeeper.", insight: 3,
-            reply: "Precisely so. Genius is not grown here; it is COLLECTED here, from everywhere, and the collision does the rest. Eratosthenes needed Egyptian surveys and Babylonian arithmetic before Greek geometry could close the circle. Every 'Greek miracle' in these halls has foreign parents. Guard your scrolls, traveler — and if you can spare a copy, we take donations." },
+            reply: "Precisely so. Genius is not grown here; it is COLLECTED here, from everywhere, and the collision does the rest. Eratosthenes needed Egyptian surveys and Babylonian arithmetic before Greek geometry could close the circle. Every 'Greek miracle' in these halls has foreign parents. Guard your scrolls, traveler — and if you can spare a copy, we take donations. One thing more, comparer of civilizations: a priest of Delphi haunts our reading room, pairing Greek lives with Roman ones to see what character is under the costumes. Your codex is his method at full scale — whisper PARALLEL LIVES and introduce yourselves." },
           { label: "A trophy-house of conquered peoples' books.", insight: 2,
             reply: "There is iron in that, and I won't pretend the ships' captains volunteer. But observe what conquest cannot do: it cannot READ. The scrolls sit dead until someone crosses them — Babylon's data with Euclid's proofs, Egypt's centuries with Greece's impatience. Theft gathered some of this library; only mixture makes it think." }
         ]
@@ -643,7 +643,7 @@ const PHILOSOPHERS = {
         text: "You know it was a Cynic who first said kosmopolites — when they asked Diogenes his city, he said 'I am a citizen of the world.' And here is my favorite gossip: when Alexander reached India, he sent Onesicritus — a Cynic! — to interview the naked sages there. Guess what he found.",
         choices: [
           { label: "Philosophers living exactly like Diogenes.", insight: 3,
-            reply: "Exactly! Men who owned nothing, feared nothing, and laughed at the conqueror's offer of gifts. Onesicritus wrote that they did with ease what we Cynics strain at. Two ends of the earth, and the same discovery: the man who needs least is freest. The Stoics in that colonnade took our 'world citizen' and dressed it in respectability. We forgive them. Mostly." },
+            reply: "Exactly! Men who owned nothing, feared nothing, and laughed at the conqueror's offer of gifts. Onesicritus wrote that they did with ease what we Cynics strain at. Two ends of the earth, and the same discovery: the man who needs least is freest. The Stoics in that colonnade took our 'world citizen' and dressed it in respectability. We forgive them. Mostly. ...You linger. Good instinct. Then hear the guild's oldest secret: our whole line — Cynic, Stoic, all of it — descends from one barefoot Athenian gadfly who wrote nothing. His ghost still takes questions here, for those who whisper Delphi's words: KNOW THYSELF." },
           { label: "Riches and wonders beyond counting.", insight: 1,
             reply: "Riches! He found philosophers wearing nothing but air, who refused Alexander's gold and told the world-conqueror to sit in the dirt and learn. The wonder was that Greeks and Indians, never having met, had both concluded: strip away wants, and no king on earth has a handle to grab you by." }
         ]
@@ -841,7 +841,7 @@ const PHILOSOPHERS = {
         text: "You have crossed the whole world to get here. Our school teaches that this was no foreign journey at all: the wise man is a kosmopolites — a citizen of the cosmos. The whole world is one city, and all rational beings are its citizens. Having walked it — do you believe us?",
         choices: [
           { label: "I do. I heard the same hopes in every language.", insight: 3,
-            reply: "Then you have proven on foot what we argue in colonnades. One reason runs through all of us, as one fire warms many hearths. Go to Rome — tell them their city is smaller than they think." },
+            reply: "Then you have proven on foot what we argue in colonnades. One reason runs through all of us, as one fire warms many hearths. Go to Rome — tell them their city is smaller than they think. And carry a Stoic secret with you: our school keeps a vigil there for a philosopher-king our teachings say must one day come — a soldier who will write to himself in a tent. In Rome, whisper THE INNER CITADEL, and see what the vigil shows you." },
           { label: "One city? The bandits on your roads disagree.", insight: 2,
             reply: "Citizens misbehave in every city; that proves the city exists, not otherwise. We do not claim all men are wise — only that the same reason is offered to each. Most decline the invitation. The invitation stands." }
         ]
