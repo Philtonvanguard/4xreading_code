@@ -39,16 +39,27 @@ let dialogue = null;   // { phil, nodeIndex, phase: "ask"|"reply", reply }
 function countConnections(cities) {
   return cities.reduce((s, c) => s + c.philosophers.length, 0);
 }
-const ACT_CONN = { 1: countConnections(CITIES), 2: countConnections(ACT2_CITIES) };
+const ACT_CONN = {
+  1: countConnections(CITIES),
+  2: countConnections(ACT2_CITIES),
+  3: countConnections(ACT3_CITIES)
+};
 
 function actNum() { return (G && G.act) || 1; }
 
 function currentAct() {
-  return actNum() === 2 ? {
+  const n = actNum();
+  if (n === 3) return {
+    num: 3, cities: ACT3_CITIES, route: ACT3_ROUTE, detours: ACT3_DETOURS,
+    points: MAP_POINTS3, mapTitle: "THE MOTHER ROAD  ·  CAPE TO CARTHAGE",
+    end: "hippo", finale: "augustine", title: "Act III — The Mother Road"
+  };
+  if (n === 2) return {
     num: 2, cities: ACT2_CITIES, route: ACT2_ROUTE, detours: ACT2_DETOURS,
     points: MAP_POINTS2, mapTitle: "THE RIVER OF TIME  ·  850 — 1950",
     end: "newyork", finale: "king", title: "Act II — The River of Time"
-  } : {
+  };
+  return {
     num: 1, cities: CITIES, route: DEFAULT_ROUTE, detours: DETOURS,
     points: MAP_POINTS, mapTitle: "THE SILK ROAD  ·  CHANG'AN TO ROME",
     end: "rome", finale: "senator", title: "Act I — The Silk Road"
@@ -57,15 +68,19 @@ function currentAct() {
 
 const PROG_KEY = "silk_road_progress";
 function act2Unlocked() { return !!loadStore(PROG_KEY).act2; }
+function act3Unlocked() { return !!loadStore(PROG_KEY).act3; }
 
 function newGame(diffKey, act) {
   const diff = DIFFICULTIES[diffKey] || DIFFICULTIES.merchant;
+  const routes = { 1: DEFAULT_ROUTE, 2: ACT2_ROUTE, 3: ACT3_ROUTE };
   G = Object.assign({}, START_STATE, diff.start, {
     act: act || 1,
     cityIndex: 0,
     legDist: 0,
-    route: ((act || 1) === 2 ? ACT2_ROUTE : DEFAULT_ROUTE).slice(),
+    route: routes[act || 1].slice(),
     legOverrides: {},
+    secrets: {},
+    cheated: false,
     pace: "steady",
     eventChance: diff.eventChance,
     priceMul: diff.priceMul,
@@ -142,6 +157,64 @@ function saveRecord(modeKey, score) {
   }
 }
 
+// --- the Whisper stone: cheats & secret passwords --------------
+
+function processWhisper(raw) {
+  const text = String(raw || "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (!text) return null;
+
+  // secret teachers listen first — knowing the words is not cheating
+  for (const pid of Object.keys(PHILOSOPHERS)) {
+    const p = PHILOSOPHERS[pid];
+    if (p.secret && p.password === text) {
+      if (!G) return "✧ The words are true — but they open a door on a road you are not walking.";
+      if (G.secrets[pid]) return "✧ That door is already open.";
+      G.secrets[pid] = true;
+      journal("Whispered the right words. A hidden teacher will receive me: " + p.name + ".");
+      sfx.scroll();
+      if (mode === "CITY" && city().philosophers.includes(pid)) cityMenu();
+      return "✧ The words are known here... " + p.name + " will receive you.";
+    }
+  }
+
+  const cheat = CHEATS.find(c => c.code === text);
+  if (!cheat) return "…the wind takes the words. Nothing answers.";
+  const e = cheat.effect;
+  if (e.unlock) {
+    const prog = loadStore(PROG_KEY);
+    if (e.unlock === "act2" || e.unlock === "all") prog.act2 = true;
+    if (e.unlock === "act3" || e.unlock === "all") prog.act3 = true;
+    saveStore(PROG_KEY, prog);
+    if (mode === "TITLE") showTitle();
+    return cheat.msg;
+  }
+  if (!G) return "✧ The words have power — but only on the road. Begin a journey first.";
+  G.cheated = G.cheated || !!cheat.cheat;
+  if (e.healFull) G.health = 100;
+  applyEffect({ silver: e.silver, food: e.food, water: e.water, camels: e.camels, insight: e.insight });
+  journal("Whispered words at the roadside. The road pretended not to notice.");
+  return cheat.msg;
+}
+
+function toggleWhisper() {
+  const w = document.getElementById("whisper");
+  const inp = document.getElementById("whisper-input");
+  if (!w || !inp) return;
+  const opening = w.classList.contains("hidden");
+  w.classList.toggle("hidden");
+  if (opening && inp.focus) { inp.value = ""; inp.focus(); }
+}
+
+function submitWhisper() {
+  const w = document.getElementById("whisper");
+  const inp = document.getElementById("whisper-input");
+  if (!inp) return;
+  const result = processWhisper(inp.value);
+  inp.value = "";
+  if (w) w.classList.add("hidden");
+  if (result) showToast(result);
+}
+
 let toastTimer = null;
 function showToast(text) {
   const t = document.getElementById("toast");
@@ -186,7 +259,7 @@ function updateStats() {
   ui.st.water.textContent = "Water " + G.water;
   ui.st.silver.textContent = "Silver " + G.silver;
   ui.st.health.textContent = "Health " + G.health;
-  ui.st.camels.textContent = (actNum() === 2 ? "Horses " : "Camels ") + G.camels;
+  ui.st.camels.textContent = ({ 1: "Camels ", 2: "Horses ", 3: "Oxen " })[actNum()] + G.camels;
   ui.st.insight.textContent = "Insight " + G.insight;
   ui.st.scrolls.textContent = "Scrolls " + G.scrolls.length;
   ui.st.food.className = "stat" + (G.food <= 5 ? " t-red" : "");
@@ -226,9 +299,10 @@ function showTitle() {
   const saveCity = save && CITY_BY_ID[(save.route || DEFAULT_ROUTE)[save.cityIndex]];
   if (saveCity) {
     addChoice("⟲  Continue your journey — Day " + save.day + ", near " + saveCity.name, () => {
-      // older saves may predate difficulty settings, branching routes and acts
+      // older saves may predate difficulty settings, branching routes, acts and secrets
       G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {}, act: 1,
-                          route: DEFAULT_ROUTE.slice(), legOverrides: {} }, save);
+                          route: DEFAULT_ROUTE.slice(), legOverrides: {},
+                          secrets: {}, cheated: false }, save);
       if (G.legDist > 0) { updateStats(); pauseTravel(); }
       else arriveAtCity(false);
     });
@@ -256,8 +330,8 @@ function chooseMode() {
 }
 
 function chooseAct() {
-  setSpeaker("TWO ROADS, ONE THREAD");
-  setText("Act I crosses the earth; Act II crosses the centuries. The scrolls you carried in the first act are the ones you follow in the second.");
+  setSpeaker("THE ROADS, ONE THREAD");
+  setText("Act I crosses the earth; Act II crosses the centuries; Act III walks the oldest road of all — the one humanity itself first took, south to north, out of Africa. Some of its teachers are hidden, and open only for whispered words.");
   clearChoices();
   addChoice("🏛  Act I — The Silk Road  ·  Chang'an to Rome, 100 BCE  (" + ACT_CONN[1] + " Connections)", () => {
     pendingAct = 1; chooseDifficulty();
@@ -265,6 +339,15 @@ function chooseAct() {
   addChoice("⏳  Act II — The River of Time  ·  Baghdad 850 to New York 1950  (" + ACT_CONN[2] + " Connections)", () => {
     pendingAct = 2; chooseDifficulty();
   });
+  if (act3Unlocked()) {
+    addChoice("🌍  Act III — The Mother Road  ·  the Cape to Carthage  (" + ACT_CONN[3] + " Connections, four of them hidden)", () => {
+      pendingAct = 3; chooseDifficulty();
+    });
+  } else {
+    addChoice("🔒  Act III — The Mother Road  ·  complete Act II to walk it", () => {
+      setText("The oldest road opens only to those who have followed the thread through the centuries first. Complete Act II — Baghdad to New York — and the Mother Road will be waiting.");
+    });
+  }
   addChoice("⟵  Back", chooseMode);
 }
 
@@ -337,12 +420,19 @@ function cityMenu() {
   const c = city();
   setSpeaker(c.name.toUpperCase() + " — " + c.region);
   clearChoices();
+  let hiddenHere = false;
   c.philosophers.forEach(pid => {
     const p = PHILOSOPHERS[pid];
+    if (p.secret && !G.secrets[pid]) { hiddenHere = true; return; }
     const met = G.met[pid];
-    addChoice((met ? "✓ " : "☆ ") + (met ? "Visit again: " : "Seek out ") + p.name + " — " + p.title,
+    addChoice((met ? "✓ " : (p.secret ? "✧ " : "☆ ")) + (met ? "Visit again: " : "Seek out ") + p.name + " — " + p.title,
       () => startDialogue(pid));
   });
+  if (hiddenHere) {
+    addChoice("❓  A rumor of a hidden teacher…", () => {
+      setText("They say someone here teaches only those who know the words — and that the words are given away freely, by other teachers, to travelers who truly listen.\n\nWhen you learn them, speak them into the Whisper stone (the ✦ button below, or the ` key).");
+    });
+  }
   addChoice("⚖  Visit the market", showMarket);
   addChoice("⌂  Rest at an inn  (−10 silver, +15 health, 1 day)", () => {
     if (G.silver < 10) { setText("The innkeeper looks at your empty purse with professional sorrow. No silver, no bed."); return; }
@@ -423,7 +513,13 @@ function finishDialogue() {
   G.scrolls.push(p.connection);
   journal("Met " + p.name + " and recorded “" + p.connection.title + "”.");
   if (G.scrolls.length === 1) unlockAch("first_scroll");
-  if (G.scrolls.length === ACT_CONN[actNum()]) unlockAch(actNum() === 2 ? "sage_of_ages" : "sage");
+  if (G.scrolls.length === ACT_CONN[actNum()]) {
+    unlockAch(actNum() === 3 ? "sage_of_source" : (actNum() === 2 ? "sage_of_ages" : "sage"));
+  }
+  if (p.secret) {
+    const secretsMet = Object.keys(PHILOSOPHERS).filter(id => PHILOSOPHERS[id].secret && G.met[id]).length;
+    if (secretsMet >= 4) unlockAch("keeper_of_secrets");
+  }
   updateStats();
   saveGame();
   sfx.scroll();
@@ -470,12 +566,15 @@ function marketMenu() {
     applyEffect({ silver: -pw, water: 5 });
     marketSay("The waterseller blesses you in two languages, keeping his options open.");
   });
-  addChoice("Buy a " + (actNum() === 2 ? "fresh horse" : "pack camel") + " — " + pc + " silver", () => {
+  const beast = { 1: "pack camel", 2: "fresh horse", 3: "trek ox" }[actNum()];
+  addChoice("Buy a " + beast + " — " + pc + " silver", () => {
     if (G.silver < pc) return marketSay("Not enough silver.");
     applyEffect({ silver: -pc, camels: 1 });
-    marketSay(actNum() === 2
-      ? "A sound animal with honest eyes. The dealer swears it once belonged to a professor, which explains nothing."
-      : "It spits at you immediately. The dealer assures you this means it likes you.");
+    marketSay({
+      1: "It spits at you immediately. The dealer assures you this means it likes you.",
+      2: "A sound animal with honest eyes. The dealer swears it once belonged to a professor, which explains nothing.",
+      3: "Broad-backed and unhurried — an animal with the temperament of a good elder. It regards the road ahead without opinion."
+    }[actNum()]);
   });
   const sold = G.soldAt[city().id];
   const canSell = G.scrolls.length > 0 && !sold;
@@ -744,12 +843,14 @@ function showVictory() {
   clearSave();
   sfx.scroll();
   const isEnvoy = G.gameMode === "envoy";
-  const isAct2 = actNum() === 2;
-  const total = ACT_CONN[actNum()];
+  const act = actNum();
+  const total = ACT_CONN[act];
   const speedBonus = isEnvoy ? Math.max(0, (G.dayLimit - G.day) * 3) : 0;
   const score = G.insight * 2 + G.scrolls.length * 10 + Math.floor(G.health / 5) + speedBonus;
+  const sageNames = { 1: "SAGE OF TWO WORLDS", 2: "SAGE OF THE AGES", 3: "SAGE OF THE SOURCE" };
+  const sageSpans = { 1: "the earth.", 2: "eleven centuries.", 3: "the whole continent of beginnings — secrets and all." };
   let rank;
-  if (G.scrolls.length >= total) rank = (isAct2 ? "SAGE OF THE AGES" : "SAGE OF TWO WORLDS") + " — the full web of connections, carried intact across " + (isAct2 ? "eleven centuries." : "the earth.");
+  if (G.scrolls.length >= total) rank = sageNames[act] + " — the full web of connections, carried intact across " + sageSpans[act];
   else if (G.scrolls.length >= Math.ceil(total * 0.66)) rank = "MASTER OF THE ROAD — most of the great threads are in your codex.";
   else if (G.scrolls.length >= Math.ceil(total * 0.4)) rank = "JOURNEYING SCHOLAR — you glimpsed the web, even if some threads escaped you.";
   else rank = "SURVIVOR OF THE ROAD — you arrived alive. The ideas, mostly, stayed home.";
@@ -758,30 +859,50 @@ function showVictory() {
     unlockAch("envoy_win");
   }
   if (G.difficulty === DIFFICULTIES.ascetic.label) unlockAch("ascetic_win");
-  if (isAct2) unlockAch("reader");
-  saveRecord(isAct2 ? "journey2" : (G.gameMode || "journey"), score);
-  // any Act I victory permanently unlocks Act II
-  if (!isAct2 && !act2Unlocked()) {
-    const prog = loadStore(PROG_KEY);
-    prog.act2 = true;
-    saveStore(PROG_KEY, prog);
-    showToast("✦ Act II unlocked: The River of Time");
+  if (act === 2) unlockAch("reader");
+  if (act === 3) unlockAch("mother_road");
+  if (G.cheated) {
+    rank += "\n\n✦ (This journey was aided by whispered words. The Hall of Records looks away, smiling.)";
+  } else {
+    saveRecord(act === 3 ? "journey3" : (act === 2 ? "journey2" : (G.gameMode || "journey")), score);
   }
-  setSpeaker(isAct2 ? "NEW YORK — THE THREAD, COMPLETE" : "ROME — JOURNEY'S END");
+  // victories open the next road
+  const prog = loadStore(PROG_KEY);
+  if (act === 1 && !prog.act2) {
+    prog.act2 = true; saveStore(PROG_KEY, prog);
+    showToast("✦ Act II unlocked: The River of Time");
+  } else if (act === 2 && !prog.act3) {
+    prog.act3 = true; saveStore(PROG_KEY, prog);
+    showToast("✦ Act III unlocked: The Mother Road");
+  }
+  const headlines = {
+    1: "ROME — JOURNEY'S END",
+    2: "NEW YORK — THE THREAD, COMPLETE",
+    3: "HIPPO — THE SOURCE AND THE SEA"
+  };
+  const scenes = {
+    1: "Day " + G.day + ". You stand in the Roman forum wearing a Persian coat, quoting a Chinese sage in Greek, " +
+       "with Babylonian hours marked on the sundial behind you.\n\n",
+    2: "Day " + G.day + ". You stand in a New York library reading room. On the shelves around you: Confucius in English, " +
+       "Rumi outselling the moderns, the Gita that made Concord, Arabic numerals on every spine's catalog card.\n\n",
+    3: "Day " + G.day + ". You stand on the harbor wall at Hippo with the whole continent at your back — the fireside courts, " +
+       "the stone walls, the cave of inquiry, the unread library, the oldest book, the whispered songs.\n\n"
+  };
+  const codas = {
+    1: "\n\nWhat the Silk Road proves is simple and enormous: no philosophy grew alone. " +
+       "Every tradition you met was already in conversation with the others — through merchants, monks, " +
+       "translators and travelers like you. The world has never not been connected.",
+    2: "\n\nEleven centuries, and the finding never changed: ideas outlive their empires, their languages, and their carriers — " +
+       "but never their need for carriers. The thread is in your hands now. It always was.",
+    3: "\n\nThe Mother Road's teaching is the deepest of the three: every road in your codex is a branch of this one. " +
+       "Humanity's first journey was out of Africa; philosophy's longest journey is inward; and both roads, walked honestly, " +
+       "arrive at the same bedrock. I am because we are — and we are because someone, even erring, is here."
+  };
+  setSpeaker(headlines[act]);
   setText(
-    (isAct2
-      ? "Day " + G.day + ". You stand in a New York library reading room. On the shelves around you: Confucius in English, " +
-        "Rumi outselling the moderns, the Gita that made Concord, Arabic numerals on every spine's catalog card.\n\n"
-      : "Day " + G.day + ". You stand in the Roman forum wearing a Persian coat, quoting a Chinese sage in Greek, " +
-        "with Babylonian hours marked on the sundial behind you.\n\n") +
+    scenes[act] +
     "Connections found: " + G.scrolls.length + " of " + total + "\nInsight: " + G.insight + "    Final score: " + score +
-    "\n\n" + rank +
-    (isAct2
-      ? "\n\nEleven centuries, and the finding never changed: ideas outlive their empires, their languages, and their carriers — " +
-        "but never their need for carriers. The thread is in your hands now. It always was."
-      : "\n\nWhat the Silk Road proves is simple and enormous: no philosophy grew alone. " +
-        "Every tradition you met was already in conversation with the others — through merchants, monks, " +
-        "translators and travelers like you. The world has never not been connected.")
+    "\n\n" + rank + codas[act]
   );
   clearChoices();
   addChoice("✦  Read your Codex of Connections", showCodex);
@@ -884,6 +1005,7 @@ function showRecords() {
   const ach = loadStore(ACH_KEY);
   const unlockedCount = ACHIEVEMENTS.filter(a => ach[a.id]).length;
   const recordLabels = { journey: "The Journey (Act I)", journey2: "The Journey (Act II)",
+                         journey3: "The Journey (Act III)",
                          envoy: GAME_MODES.envoy.label, symposium: GAME_MODES.symposium.label };
   let html = '<div class="codex-entry"><h3>Best scores</h3><p>' +
     Object.keys(recordLabels).map(k =>
@@ -984,10 +1106,19 @@ document.getElementById("btn-journal").onclick = showJournal;
 document.getElementById("btn-sound").onclick = function () {
   this.textContent = toggleSound();
 };
+document.getElementById("btn-whisper").onclick = toggleWhisper;
+document.getElementById("whisper-go").onclick = submitWhisper;
+document.getElementById("whisper-input").onkeydown = function (e) {
+  if (e.key === "Enter") submitWhisper();
+  if (e.key === "Escape") toggleWhisper();
+  if (e.stopPropagation) e.stopPropagation();
+};
 
 if (document.addEventListener) {
   document.addEventListener("keydown", e => {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.target && e.target.tagName === "INPUT") return; // the whisper stone is listening
+    if (e.key === "`") { e.preventDefault(); toggleWhisper(); return; }
     if (e.key >= "1" && e.key <= "9") {
       const b = ui.choices.children[+e.key - 1];
       if (b && !b.disabled) { e.preventDefault(); b.onclick(); }

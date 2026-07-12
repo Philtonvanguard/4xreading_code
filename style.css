@@ -144,6 +144,30 @@ canvas#scene {
 .codex-entry p  { font-size: 13px; line-height: 1.45; color: var(--ink); }
 .codex-entry .route { font-size: 11px; color: var(--dim); margin-top: 4px; }
 
+#whisper {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 2px solid var(--panel-edge);
+  background: #1b150e;
+}
+
+#whisper-input {
+  flex: 1;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+  background: #2e2316;
+  color: var(--gold);
+  border: 2px solid var(--panel-edge);
+  padding: 6px 10px;
+  letter-spacing: 1px;
+}
+
+#whisper-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
 #toast {
   position: fixed;
   top: 16px;
