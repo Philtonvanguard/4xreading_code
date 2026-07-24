@@ -124,6 +124,8 @@ canvas#scene {
 .footbtn { font-size: 12px; padding: 4px 10px; }
 
 #foot-hint { margin-left: auto; font-size: 12px; }
+[dir="rtl"] #foot-hint { margin-left: 0; margin-right: auto; }
+select.footbtn option { background: #2e2316; color: var(--ink); }
 
 .t-gold  { color: var(--gold); }
 .t-jade  { color: var(--jade); }

@@ -262,14 +262,14 @@ function currentLeg() {
 function updateStats() {
   if (!G) return;
   ui.stats.classList.remove("hidden");
-  ui.st.day.textContent = "Day " + G.day + (G.dayLimit ? " / " + G.dayLimit : "");
-  ui.st.food.textContent = "Food " + G.food;
-  ui.st.water.textContent = "Water " + G.water;
-  ui.st.silver.textContent = "Silver " + G.silver;
-  ui.st.health.textContent = "Health " + G.health;
-  ui.st.camels.textContent = ({ 1: "Camels ", 2: "Horses ", 3: "Oxen ", 4: "Llamas " })[actNum()] + G.camels;
-  ui.st.insight.textContent = "Insight " + G.insight;
-  ui.st.scrolls.textContent = "Scrolls " + G.scrolls.length;
+  ui.st.day.textContent = T("day") + " " + G.day + (G.dayLimit ? " / " + G.dayLimit : "");
+  ui.st.food.textContent = T("food") + " " + G.food;
+  ui.st.water.textContent = T("water") + " " + G.water;
+  ui.st.silver.textContent = T("silver") + " " + G.silver;
+  ui.st.health.textContent = T("health") + " " + G.health;
+  ui.st.camels.textContent = ({ 1: T("camels"), 2: T("horses"), 3: T("oxen"), 4: T("llamas") })[actNum()] + " " + G.camels;
+  ui.st.insight.textContent = T("insight") + " " + G.insight;
+  ui.st.scrolls.textContent = T("scrolls") + " " + G.scrolls.length;
   ui.st.food.className = "stat" + (G.food <= 5 ? " t-red" : "");
   ui.st.water.className = "stat" + (G.water <= 5 ? " t-red" : "");
   ui.st.health.className = "stat" + (G.health <= 30 ? " t-red" : "");
@@ -318,7 +318,7 @@ function showTitle() {
   addChoice("⟶  Begin " + (save ? "a new" : "the") + " journey", chooseMode);
   addChoice("✧  Hall of Records", showRecords);
   addChoice("?   How to play", showHelp);
-  ui.hint.textContent = "keys: 1–9 choose · C/M/J panels";
+  ui.hint.textContent = T("hint");
 }
 
 let pendingAct = 1;
