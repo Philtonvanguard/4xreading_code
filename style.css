@@ -115,6 +115,7 @@ canvas#scene {
 
 #footbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   padding: 8px 12px;
@@ -125,6 +126,20 @@ canvas#scene {
 
 #foot-hint { margin-left: auto; font-size: 12px; }
 [dir="rtl"] #foot-hint { margin-left: 0; margin-right: auto; }
+
+#langbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 12px;
+  border-top: 2px solid var(--panel-edge);
+  background: #1b150e;
+  font-size: 12px;
+}
+#langbar label { color: var(--dim); letter-spacing: 1px; }
+#lang-select { min-width: 150px; }
+#lang-note { color: var(--dim); font-size: 11px; margin-left: auto; }
+[dir="rtl"] #lang-note { margin-left: 0; margin-right: auto; }
 select.footbtn option { background: #2e2316; color: var(--ink); }
 
 .t-gold  { color: var(--gold); }
