@@ -261,31 +261,116 @@ var I18N = (function () {
     return (LANGS[cur].d[k] !== undefined ? LANGS[cur].d[k] : LANGS.en.d[k]) || k;
   }
 
-  // --- narrative translation (browser built-in Translator API) ------------
+  // --- story translation ----------------------------------------------------
+  // Two sources, in this order:
+  //  1. lang/<code>.js, a dictionary built ahead of time by tools/translate.js.
+  //     It works in every browser. Keys are hashes of the English text.
+  //  2. The browser's built-in Translator API (desktop Chrome and Edge), for
+  //     any line the dictionary does not have.
+  // Text is matched one line at a time, with decorations peeled off and numbers
+  // swapped for "#", so "Buy food (5 days) — 12 silver" and "... — 14 silver"
+  // share one entry. A line with no entry is retried in parts, split on the
+  // " — ", " · " and " ⟶ " joints the game uses to glue labels together.
 
-  var translator = null;       // active Translator instance
-  var translatorFor = null;    // language it was built for
-  var translatorFailed = null; // language that failed, to stop retry spam
-  var pending = null;          // in-flight create() promise
-  var pendingFor = null;       // language the in-flight create() is for
-  var cache = {};              // "lang|english" -> translated
+  var VERSION = 8;        // bump together with the ?v= in index.html
+  var DICT = {};          // lang -> { hash: translation }, once its file has loaded (or failed)
+  var hasFile = {};       // lang -> true when lang/<code>.js exists
+  var dictWait = {};      // lang -> true while its script is loading
+  // languages with a lang/<code>.js file (Chrome has no translator for Persian or Urdu)
+  var BUILT = " es ar he fr de pt it ru zh ja ko hi tr pl nl bn id vi ";
+  var LEAD = /^[^\p{L}\p{N}"“‘'(\[#]+/u;
+  var TRAIL = /[\s」✦✧★✎✓✗▼▲]+$/u;
+  var JOINT = /(\s+[—·⟶]\s+)/;
+
+  function hash(s) { // FNV-1a, 32 bit
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36);
+  }
+
+  // "☆ Seek out Master Dong ✓" -> lead "☆ ", core "Seek out Master Dong", trail " ✓"
+  function peel(s) {
+    var lead = (s.match(LEAD) || [""])[0];
+    var rest = s.slice(lead.length);
+    var trail = (rest.match(TRAIL) || [""])[0];
+    return { lead: lead, core: rest.slice(0, rest.length - trail.length), trail: trail };
+  }
+
+  function fromDict(core) {
+    var d = DICT[cur];
+    if (!d) return null;
+    var hit = d[hash(core)];
+    if (hit !== undefined) return hit;
+    var nums = core.match(/\d+/g);
+    if (!nums) return null;
+    hit = d[hash(core.replace(/\d+/g, "#"))];
+    if (hit === undefined) return null;
+    var i = 0;
+    return hit.replace(/#/g, function () { return nums[i++] || ""; });
+  }
+
+  // Translate one string. Returns the text and the English bits still missing.
+  function translate(s) {
+    var misses = [];
+    var bit = function (text, whole) {
+      var p = peel(text);
+      if (!/[A-Za-z]/.test(p.core)) return text;
+      var hit = fromDict(p.core);
+      if (hit !== null) return p.lead + hit + p.trail;
+      var parts = whole ? p.core.split(JOINT) : [p.core];
+      if (parts.length === 1) { misses.push(p.core); return text; }
+      return p.lead + parts.map(function (x, i) { return i % 2 ? x : bit(x, false); }).join("") + p.trail;
+    };
+    var out = String(s).split("\n").map(function (line) { return bit(line, true); }).join("\n");
+    return { out: out, misses: misses };
+  }
 
   function note(msg) {
     var el = document.getElementById("lang-note");
     if (el) el.textContent = msg || "";
   }
 
+  function loadDict(code) {
+    if (code === "en" || DICT[code] || dictWait[code]) return;
+    if (BUILT.indexOf(" " + code + " ") < 0) { DICT[code] = {}; return; }
+    dictWait[code] = true;
+    note(t("transLoading"));
+    var s = document.createElement("script");
+    s.src = "lang/" + code + ".js?v=" + VERSION;
+    s.onload = s.onerror = function () {
+      dictWait[code] = false;
+      if (!DICT[code]) DICT[code] = {}; // no file: the browser translator is the only source
+      if (cur === code) { note(""); retranslateVisible(); }
+    };
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  // Called by each lang/<code>.js file.
+  function load(code, table) {
+    DICT[code] = table;
+    hasFile[code] = true;
+  }
+
+  var translator = null;       // active Translator instance
+  var translatorFor = null;    // language it was built for
+  var translatorFailed = null; // language that failed, to stop retry spam
+  var pending = null;          // in-flight create() promise
+  var pendingFor = null;       // language the in-flight create() is for
+
+  // The "story stays in English" note is only true when there is no dictionary either.
+  function noteOff() { if (!hasFile[cur]) note(t("transOff")); }
+
   function ensureTranslator() {
-    if (cur === "en" || typeof Translator === "undefined") return Promise.resolve(null);
+    if (cur === "en" || typeof Translator === "undefined") { noteOff(); return Promise.resolve(null); }
     if (translator && translatorFor === cur) return Promise.resolve(translator);
     if (translatorFailed === cur) return Promise.resolve(null);
     if (pending && pendingFor === cur) return pending;
     var target = cur;
-    note(t("transLoading"));
+    if (!hasFile[target]) note(t("transLoading"));
     // A model download can hang in some environments; after 20s stop
     // promising and say so (translations still apply if it finishes later).
     setTimeout(function () {
-      if (pendingFor === target && cur === target && !translator) note(t("transOff"));
+      if (pendingFor === target && cur === target && !translator) noteOff();
     }, 20000);
     pendingFor = target;
     pending = Translator.create({ sourceLanguage: "en", targetLanguage: API_LANG[target] || target })
@@ -298,50 +383,50 @@ var I18N = (function () {
       .catch(function () {
         if (pendingFor === target) { pending = null; pendingFor = null; }
         translatorFailed = target;
-        if (cur === target) note(t("transOff"));
+        if (cur === target) noteOff();
         return null;
       });
     return pending;
   }
 
-  // Translate an element's text in place. dataset.orig anchors the English
-  // source so late-arriving translations never clobber newer content.
-  function renderTranslated(el, original) {
-    if (!el || typeof original !== "string" || !original) return;
-    el.dataset.orig = original;
-    if (cur === "en") { el.textContent = original; return; }
+  // Ask the browser translator for bits the dictionary lacks. Results are
+  // added to the dictionary, then whatever is on screen is drawn again.
+  var asked = {};
+  function fill(misses) {
     var target = cur;
-    var key = target + "|" + original;
-    if (cache[key]) { el.textContent = cache[key]; return; }
+    var fresh = misses.filter(function (m) { return !asked[target + "|" + m]; });
+    if (!fresh.length) return;
+    fresh.forEach(function (m) { asked[target + "|" + m] = true; }); // cleared on language change
     ensureTranslator().then(function (tr) {
       if (!tr || cur !== target) return;
-      tr.translate(original).then(function (out) {
-        if (!out) return;
-        cache[key] = out;
-        if (el.dataset.orig === original && cur === target) el.textContent = out;
-      }).catch(function () {});
+      Promise.all(fresh.map(function (m) {
+        return tr.translate(m).then(function (out) { if (out) DICT[target][hash(m)] = out; }).catch(function () {});
+      })).then(function () { if (cur === target) retranslateVisible(); });
     });
   }
 
-  // Canvas text is redrawn every frame, so it asks synchronously: the cached
-  // translation if there is one, else English now and a translation later.
-  var asked = {};
-  function tx(s) {
-    if (cur === "en" || typeof s !== "string" || !/[A-Za-z]/.test(s)) return s;
-    var target = cur, key = target + "|" + s;
-    if (cache[key]) return cache[key];
-    if (!asked[key]) {
-      asked[key] = true; // cleared on language change, so a failure is not retried every frame
-      ensureTranslator().then(function (tr) {
-        if (!tr || cur !== target) return;
-        tr.translate(s).then(function (out) { if (out) cache[key] = out; }).catch(function () {});
-      });
-    }
-    return s;
+  // English in, the player's language out. Used for every string the game shows.
+  function say(s) {
+    if (cur === "en" || typeof s !== "string" || !s) return s;
+    if (!DICT[cur]) { loadDict(cur); if (!DICT[cur]) return s; } // still loading: English for now
+    var r = translate(s);
+    fill(r.misses);
+    return r.out;
   }
 
+  // Translate an element's text in place. dataset.orig keeps the English
+  // source so a language switch can redo it.
+  function renderTranslated(el, original) {
+    if (!el || typeof original !== "string" || !original) return;
+    el.dataset.orig = original;
+    el.textContent = say(original);
+  }
+
+  // Canvas text is redrawn every frame, so it just asks each time.
+  var tx = say;
+
   // Panels built as HTML (codex, journal, records): translate each text node
-  // in place, keeping its spacing, and leave .notranslate (passwords) alone.
+  // in place and leave .notranslate (passwords, scores) alone.
   function translateTree(root) {
     if (!root) return;
     delete root.dataset.orig; // the panel is no longer one plain string
@@ -349,20 +434,8 @@ var I18N = (function () {
     while ((n = walker.nextNode())) nodes.push(n);
     nodes.forEach(function (node) {
       if (node.__orig === undefined) node.__orig = node.nodeValue;
-      var src = node.__orig, core = src.trim();
-      if (!/[A-Za-z]/.test(core) || (node.parentElement && node.parentElement.closest(".notranslate"))) return;
-      if (cur === "en") { node.nodeValue = src; return; }
-      var target = cur, key = target + "|" + core;
-      var put = function (out) { node.nodeValue = src.match(/^\s*/)[0] + out + src.match(/\s*$/)[0]; };
-      if (cache[key]) { put(cache[key]); return; }
-      ensureTranslator().then(function (tr) {
-        if (!tr || cur !== target) return;
-        tr.translate(core).then(function (out) {
-          if (!out) return;
-          cache[key] = out;
-          if (cur === target && node.isConnected) put(out);
-        }).catch(function () {});
-      });
+      if (node.parentElement && node.parentElement.closest(".notranslate")) return;
+      node.nodeValue = say(node.__orig);
     });
   }
 
@@ -415,7 +488,7 @@ var I18N = (function () {
   // Re-render whatever is currently on screen in the new language (or back
   // to the stored English originals when switching to English).
   function retranslateVisible() {
-    ["text", "speaker"].forEach(function (id) {
+    ["text", "speaker", "toast"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el && el.dataset.orig) renderTranslated(el, el.dataset.orig);
       else if (id === "text") translateTree(el); // an HTML panel is open
@@ -512,7 +585,7 @@ var I18N = (function () {
     document.querySelectorAll("#choices button").forEach(function (b) {
       if (b.textContent && !b.dataset.orig) b.dataset.orig = b.textContent;
     });
-    if (cur !== "en") { ensureTranslator(); retranslateVisible(); }
+    if (cur !== "en") retranslateVisible(); // also starts loading the language file
   }
 
   if (document.readyState === "loading") {
@@ -521,7 +594,8 @@ var I18N = (function () {
     initPicker();
   }
 
-  return { t: t, tx: tx, set: set, current: function () { return cur; } };
+  return { t: t, tx: tx, set: set, current: function () { return cur; },
+           load: load, hash: hash, peel: peel, JOINT: JOINT, translate: translate };
 })();
 
 function T(k) { return I18N.t(k); }

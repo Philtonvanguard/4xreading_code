@@ -156,7 +156,7 @@ function unlockAch(id) {
   store[id] = true;
   saveStore(ACH_KEY, store);
   const a = ACHIEVEMENTS.find(x => x.id === id);
-  if (a) { showToast("✦ Achievement: " + a.name); sfx.coin(); }
+  if (a) { showToast("✦ Achievement — " + a.name); sfx.coin(); }
   return true;
 }
 
@@ -182,10 +182,10 @@ function processWhisper(raw) {
       if (!G) return "✧ The words are true — but they open a door on a road you are not walking.";
       if (G.secrets[pid]) return "✧ That door is already open.";
       G.secrets[pid] = true;
-      journal("Whispered the right words. A hidden teacher will receive me: " + p.name + ".");
+      journal("Whispered the right words. A hidden teacher will receive me  ·  " + p.name);
       sfx.scroll();
       if (mode === "CITY" && city().philosophers.includes(pid)) cityMenu();
-      return "✧ The words are known here... " + p.name + " will receive you.";
+      return "✧ The words are known here. You will be received  ·  " + p.name;
     }
   }
 
@@ -234,7 +234,7 @@ function noteRumors(text) {
     if (!p.secret || known[pid] || !low.includes(p.password)) return;
     known[pid] = true;
     saveStore(RUMOR_KEY, known);
-    if (G) journal("Heard words meant for a hidden teacher in " + secretCity(pid).name + ". Noted them under Rumors.");
+    if (G) journal("Heard words meant for a hidden teacher. Noted them under Rumors  ·  " + secretCity(pid).name);
     // the words themselves stay out of the toast: toasts get translated, passwords must not be
     showToast("✎ Rumor noted in your Journal: words for a hidden teacher");
   });
@@ -248,8 +248,8 @@ function rumorsHTML() {
     const c = secretCity(id);
     const state = G && G.met[id] ? "Teacher met on this journey." :
       G && G.secrets[id] ? "Door open on this journey." : "Not yet spoken on this journey.";
-    return '<p><b class="notranslate">“' + PHILOSOPHERS[id].password + '”</b> <span>Speak them in ' +
-      c.name + " (Act " + ROMAN[actOfCity(c.id)] + "). " + state + "</span></p>";
+    return '<p><b class="notranslate">“' + PHILOSOPHERS[id].password + '”</b> <span>Speak them in  ·  ' +
+      c.name + "  ·  Act " + ROMAN[actOfCity(c.id)] + "  ·  " + state + "</span></p>";
   }).join("") +
   '<div class="route">Type the words into the Whisper stone exactly as written here, or pick them from the city menu when you arrive.</div></div>';
 }
@@ -358,7 +358,7 @@ function showTitle() {
   const save = loadSave();
   const saveCity = save && CITY_BY_ID[(save.route || DEFAULT_ROUTE)[save.cityIndex]];
   if (saveCity) {
-    addChoice("⟲  Continue your journey — Day " + save.day + ", near " + saveCity.name, () => {
+    addChoice("⟲  Continue your journey — Day " + save.day + " · " + saveCity.name, () => {
       // older saves may predate difficulty settings, branching routes, acts and secrets
       G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {}, act: 1,
                           route: DEFAULT_ROUTE.slice(), legOverrides: {},
@@ -470,7 +470,7 @@ function arriveAtCity(first) {
   mode = "CITY";
   G.legDist = 0;
   const c = city();
-  journal(first ? "The journey begins in " + c.name + "." : "Reached " + c.name + ".");
+  journal(first ? "The journey begins  ·  " + c.name : "Arrived in  ·  " + c.name);
   if (c.id === "taxila") unlockAch("high_road");
   if (c.id === "alexandria") unlockAch("lighthouse");
   if (c.id === "concord") unlockAch("walden");
@@ -495,13 +495,13 @@ function cityMenu() {
     const p = PHILOSOPHERS[pid];
     if (p.secret && !G.secrets[pid]) {
       if (rumors()[pid]) {
-        addChoice("✧  Speak the words you heard: “" + p.password + "”",
+        addChoice("✧  Speak the words you heard  ·  “" + p.password + "”",
           () => showToast(processWhisper(p.password)));
       } else hiddenHere = true;
       return;
     }
     const met = G.met[pid];
-    addChoice((met ? "✓ " : (p.secret ? "✧ " : "☆ ")) + (met ? "Visit again: " : "Seek out ") + p.name + " — " + p.title,
+    addChoice((met ? "✓ " : (p.secret ? "✧ " : "☆ ")) + (met ? "Visit again" : "Seek out") + "  ·  " + p.name + " — " + p.title,
       () => startDialogue(pid));
   });
   if (hiddenHere) {
@@ -521,9 +521,9 @@ function cityMenu() {
     if (G.met[A.finale]) addChoice("★  Conclude your journey", showVictory);
   } else if (det) {
     const main = { dist: c.distToNext, terrain: c.terrainToNext };
-    addChoice("⟶  Set out for " + nextCity().name + "  (" + main.dist + " km of " + main.terrain + " · " + forecastTag(main) + ")",
+    addChoice("⟶  Travel to  ·  " + nextCity().name + "  ·  " + main.dist + " km of " + main.terrain + " · " + forecastTag(main),
       () => setOut(main, startTravel));
-    addChoice(det.label + "  [" + forecastTag(det.leg) + "]", () => setOut(det.leg, () => {
+    addChoice(det.label + "\n·  " + forecastTag(det.leg), () => setOut(det.leg, () => {
       G.route.splice(G.cityIndex + 1, 0, det.via);
       G.legOverrides[G.cityIndex] = det.leg;
       journal(det.journal);
@@ -531,7 +531,7 @@ function cityMenu() {
     }));
   } else {
     const leg = currentLeg();
-    addChoice("⟶  Set out for " + nextCity().name + "  (" + leg.dist + " km of " + leg.terrain + " · " + forecastTag(leg) + ")",
+    addChoice("⟶  Travel to  ·  " + nextCity().name + "  ·  " + leg.dist + " km of " + leg.terrain + " · " + forecastTag(leg),
       () => setOut(leg, startTravel));
   }
 }
@@ -560,9 +560,9 @@ function setOut(leg, go) {
   const f = forecast(leg.dist, leg.terrain);
   if (G.food >= f.food && G.water >= f.water) return go();
   const line = (what, have, need) => what + ": you carry " + have + ", the road needs " + need +
-    (have < need ? ". You are " + (need - have) + " short." : ".");
+    "." + (have < need ? "\n      You are " + (need - have) + " short." : "");
   setSpeaker("THE CARAVAN MASTER COUNTS YOUR STORES");
-  setText("This road is about " + f.days + " days at your " + G.pace + " pace.\n\n" +
+  setText("This road is about " + f.days + " days at your current pace.\n\n" +
     line("Food", G.food, f.food) + (f.water ? "\n" + line("Water", G.water, f.water) : "") +
     "\n\nRoad events can cost extra days. An empty pack drains your health every day you walk.");
   clearChoices();
@@ -625,7 +625,7 @@ function finishDialogue() {
   mode = "CITY";
   G.met[dialogue.pid] = true;
   G.scrolls.push(p.connection);
-  journal("Met " + p.name + " and recorded “" + p.connection.title + "”.");
+  journal("Spoke with  ·  " + p.name + "  ·  「 " + p.connection.title + " 」");
   if (G.scrolls.length === 1) unlockAch("first_scroll");
   if (G.scrolls.length === ACT_CONN[actNum()]) {
     const sageAch = { 1: "sage", 2: "sage_of_ages", 3: "sage_of_source" }[actNum()];
@@ -661,7 +661,7 @@ function priceAt(base) {
 function showMarket() {
   mode = "MARKET";
   const c = city();
-  setSpeaker("THE MARKET OF " + c.name.toUpperCase());
+  setSpeaker("THE MARKET — " + c.name.toUpperCase());
   setText("Stalls of dried fruit, waterskins, fodder and rumor. Prices climb the farther west you go — as does the value of a good scroll.");
   marketMenu();
 }
@@ -757,13 +757,13 @@ function showTrade(msg) {
   const idx = G.cityIndex, names = GOODS[actNum()];
   const cheap = idx % 4, crave = (idx + 2) % 4;
   const ahead = CITY_BY_ID[G.route[idx + 2]];
-  setSpeaker("THE TRADERS' ROW OF " + city().name.toUpperCase());
+  setSpeaker("THE TRADERS' ROW — " + city().name.toUpperCase());
   setText((msg ? msg + "\n\n" : "") +
-    "Cargo: " + cargoCount() + " of " + cargoCap() + " bales  (" + BALES_PER_BEAST + " per animal).   Silver: " + G.silver + "\n" +
-    names.map((n, gi) => n + " " + goodPrice(gi, idx) +
-      (gi === cheap ? " ▼ made here" : gi === crave ? " ▲ wanted here" : "")).join("   ·   ") +
+    "Cargo: " + cargoCount() + " of " + cargoCap() + " bales  ·  " + BALES_PER_BEAST + " per animal  ·  Silver: " + G.silver + "\n\n" +
+    names.map((n, gi) => n + "  ·  " + goodPrice(gi, idx) + " silver" +
+      (gi === cheap ? "  ·  made here ▼" : gi === crave ? "  ·  in demand here ▲" : "")).join("\n") +
     "\n\nThe trader's rule: buy what a city makes, sell it where it is wanted." +
-    (ahead ? " Caravan talk says " + ahead.name + " pays well for " + names[cheap].toLowerCase() + "." : ""));
+    (ahead ? "\nWhat this city makes is wanted two stops on  ·  " + ahead.name : ""));
   clearChoices();
   names.forEach((n, gi) => {
     const p = goodPrice(gi, idx);
@@ -779,7 +779,7 @@ function showTrade(msg) {
   names.forEach((n, gi) => {
     if (!G.cargo[gi]) return;
     const p = goodPrice(gi, idx);
-    addChoice("Sell 1 bale of " + n.toLowerCase() + "  (you hold " + G.cargo[gi] + ") — " + p + " silver", () => {
+    addChoice("Sell 1 bale of " + n.toLowerCase() + "  ·  you hold " + G.cargo[gi] + " — " + p + " silver", () => {
       const cost = G.cargoCost[gi] / G.cargo[gi];
       G.cargo[gi]--;
       G.cargoCost[gi] -= cost;
@@ -797,9 +797,10 @@ function showTrade(msg) {
 // --- TRAVEL --------------------------------------------------
 
 const PACES = {
-  easy:   { label: "Easy — slow, restful",        speedMul: 0.65, health: +1 },
+  // "word" is what the road screen shows. Plain words on purpose: "swift" was machine-translated as a surname.
+  easy:   { label: "Slow — restful",              word: "slow",   speedMul: 0.65, health: +1 },
   steady: { label: "Steady — the caravan's pace", speedMul: 1.0,  health: 0  },
-  swift:  { label: "Swift — hard on body & beast", speedMul: 1.4, health: -2 }
+  swift:  { label: "Fast — hard on body & beast", word: "fast",   speedMul: 1.4, health: -2 }
 };
 const PACE_ORDER = ["easy", "steady", "swift"];
 
@@ -832,9 +833,9 @@ let travelSpeed = 1; // fast-forward: divides the real time per travel day
 function travelText(extra) {
   const c = city(), n = nextCity(), leg = currentLeg();
   const remaining = Math.max(0, leg.dist - Math.floor(G.legDist));
-  setText("On the road: " + c.name + "  ⟶  " + n.name +
+  setText("On the road  ·  " + c.name + "  ⟶  " + n.name +
     "\nTerrain: " + leg.terrain + "   ·   " + remaining + " km remaining   ·   about " +
-    Math.ceil(remaining / daySpeed(leg.terrain)) + " days   ·   pace: " + G.pace +
+    Math.ceil(remaining / daySpeed(leg.terrain)) + " days   ·   pace: " + ((PACES[G.pace] || PACES.steady).word || "steady") +
     (extra ? "\n\n" + extra : ""));
 }
 
@@ -861,8 +862,8 @@ function travelDayTick() {
   G.water = Math.max(0, G.water - (leg.terrain === "sea" ? 0 : thirst));
 
   let starving = "";
-  if (G.food <= 0) { G.health -= 8; starving = "You are out of food. "; }
-  if (G.water <= 0 && leg.terrain !== "sea") { G.health -= 10; starving += "Your waterskins are empty. "; }
+  if (G.food <= 0) { G.health -= 8; starving = "⚠ You are out of food.\n"; }
+  if (G.water <= 0 && leg.terrain !== "sea") { G.health -= 10; starving += "⚠ Your waterskins are empty.\n"; }
   updateStats();
 
   if (G.health <= 0) {
@@ -870,7 +871,7 @@ function travelDayTick() {
     return;
   }
   if (checkDeadline()) return;
-  if (starving) travelText("⚠ " + starving + "Your health is failing — reach the next city or find relief.");
+  if (starving) travelText(starving + "Your health is failing — reach the next city or find relief.");
   else if (Math.random() < 0.06) travelText(flavorLine());
   else travelText();
 
@@ -911,7 +912,7 @@ function triggerQuiz() {
         setText("Your answer rings true, and the fire circle nods. Someone presses a few coins on you — \"for the teaching.\" This, too, is how philosophers ate.\n\n(+3 insight, +8 silver)");
       } else {
         applyEffect({ insight: 1 });
-        setText("You fumble it, and an old pilgrim gently sets you right:\n\n\"" + quiz.options[quiz.correct] + "\"\n\nWisdom reviewed is wisdom doubled. (+1 insight)");
+        setText("You fumble it, and an old pilgrim gently sets you right:\n\n「 " + quiz.options[quiz.correct] + " 」\n\nWisdom reviewed is wisdom doubled. (+1 insight)");
       }
       clearChoices();
       addChoice("⟶  Continue on", startTravel);
@@ -980,7 +981,7 @@ function showCodex() {
   } else {
     setHTML(G.scrolls.map(s =>
       '<div class="codex-entry"><h3>' + s.title + '</h3><p>' + s.text +
-      '</p><div class="route">thread: ' + s.route + '</div></div>'
+      '</p><div class="route"><span>thread:</span> <span>' + s.route + '</span></div></div>'
     ).join(""));
   }
   clearChoices();
@@ -1185,7 +1186,7 @@ function answerSymposium(idx) {
   }
   setSpeaker(symStatus());
   setText((right ? "✓ Well answered" + (SYM.streak > 1 ? " — streak of " + SYM.streak + "!" : ".")
-                 : "✗ Not so. The answer: " + quiz.options[quiz.correct]) +
+                 : "✗ Not so. The answer:\n「 " + quiz.options[quiz.correct] + " 」") +
     "\n\n「 " + phil.connection.title + " 」\n" + phil.connection.text);
   clearChoices();
   SYM.i++;
@@ -1230,7 +1231,7 @@ function showRecords() {
                          envoy: GAME_MODES.envoy.label, symposium: GAME_MODES.symposium.label };
   let html = '<div class="codex-entry"><h3>Best scores</h3><p>' +
     Object.keys(recordLabels).map(k =>
-      recordLabels[k] + ": " + (rec[k] ? rec[k] : "—")).join(" &nbsp;·&nbsp; ") +
+      "<span>" + recordLabels[k] + "</span>: " + (rec[k] ? rec[k] : "—")).join(" &nbsp;·&nbsp; ") +
     "</p></div>";
   html += '<div class="codex-entry"><h3>Achievements — ' + unlockedCount + " of " + ACHIEVEMENTS.length + "</h3>" +
     ACHIEVEMENTS.map(a =>

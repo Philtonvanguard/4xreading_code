@@ -3,57 +3,16 @@
 // (forecast, trade, rumors, whispers, fast-forward, languages), then plays
 // all four acts start to finish. No dependencies.
 "use strict";
-const fs = require("fs"), path = require("path"), vm = require("vm"), assert = require("assert");
-
-// --- stub DOM ---------------------------------------------------
-function makeEl() {
-  const el = {
-    children: [], dataset: {}, style: {}, textContent: "", value: "", disabled: false,
-    classList: { set: new Set(), add(c) { this.set.add(c); }, remove(c) { this.set.delete(c); },
-      toggle(c, on) { (on === undefined ? !this.set.has(c) : on) ? this.set.add(c) : this.set.delete(c); },
-      contains(c) { return this.set.has(c); } },
-    appendChild(c) { this.children.push(c); return c; },
-    insertBefore(c) { this.children.push(c); return c; },
-    setAttribute() {}, addEventListener() {}, focus() {},
-    getContext: () => ctx
-  };
-  Object.defineProperty(el, "innerHTML", { get: () => el._html || "", set(v) { el._html = v; el.children = []; } });
-  return el;
-}
-const ctx = new Proxy({}, { get: (t, k) => k in t ? t[k] : (k === "measureText" ? () => ({ width: 20 }) : () => {}),
-                            set: (t, k, v) => { t[k] = v; return true; } });
-const els = {}, ready = [], store = new Map();
-globalThis.document = {
-  readyState: "loading", documentElement: makeEl(),
-  getElementById: id => els[id] || (els[id] = makeEl()),
-  querySelector: s => els[s] || (els[s] = makeEl()),
-  querySelectorAll: () => [],
-  createElement: makeEl,
-  createTreeWalker: () => ({ nextNode: () => null }),
-  addEventListener: (ev, fn) => { if (ev === "DOMContentLoaded") ready.push(fn); }
-};
-globalThis.NodeFilter = { SHOW_TEXT: 4 };
-globalThis.localStorage = { getItem: k => store.has(k) ? store.get(k) : null,
-  setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
-globalThis.requestAnimationFrame = () => {};
-
-const root = path.join(__dirname, "..");
-for (const f of ["i18n", "data", "data2", "data3", "data4", "sprites", "audio", "game"]) {
-  vm.runInThisContext(fs.readFileSync(path.join(root, "js", f + ".js"), "utf8"), { filename: f + ".js" });
-}
-ready.forEach(fn => fn()); // i18n wraps setText / addChoice / setHTML / showToast here
-
-// expose the game's top-level let/const bindings to this strict-mode file
-const g = n => vm.runInThisContext(n);
+const fs = require("fs"), path = require("path"), assert = require("assert");
+const { root, els, g, buttons, click, tick, loadLang } = require("./harness.js");
 const G = () => g("G"), mode = () => g("mode");
-const buttons = () => els.choices.children;
-const click = want => {
-  const b = buttons().find(x => !x.disabled && x.textContent.includes(want));
-  assert(b, "no choice containing: " + want + "\n  have: " + buttons().map(x => x.textContent).join(" | "));
-  b.onclick();
-};
-let clock = 0;
-const tick = () => g("render")(clock += 1400);
+
+// every English string the game shows, for the dictionary check at the end
+const shown = new Set();
+for (const name of ["setText", "setSpeaker", "addChoice", "showToast"]) {
+  const orig = globalThis[name];
+  globalThis[name] = function (s) { if (typeof s === "string") shown.add(s); return orig.apply(this, arguments); };
+}
 let checks = 0;
 const ok = (cond, msg) => { assert(cond, msg); checks++; };
 
@@ -82,7 +41,7 @@ ok(g("forecast")(600, "sea").water === 0, "no water needed at sea");
 ok(buttons().some(b => b.textContent.includes("about 9 days · food ✓ · water ✓")), "forecast on the Set out choice");
 G().water = 2;
 g("cityMenu")();
-click("Set out for");
+click("Travel to  ·");
 ok(mode() === "CITY" && els.text.textContent.includes("You are 8 short"), "shortage warning blocks the gate");
 ok(buttons().some(b => b.textContent.includes("Set out anyway")), "can still leave short");
 G().water = 25;
@@ -166,7 +125,7 @@ for (const act of [1, 2, 3, 4]) {
     }
     if (g("city")().id === A.end) { click("Conclude your journey"); break; }
     const det = A.detours.find(d => d.from === g("city")().id && !G().route.includes(d.via));
-    click(det ? det.label : "Set out for");
+    click(det ? det.label : "Travel to  ·");
     for (let steps = 0; mode() !== "CITY"; steps++) {
       assert(steps < 2000 && mode() !== "GAMEOVER", "act " + act + " stuck on the road in mode " + mode());
       G().health = 100;
@@ -176,6 +135,21 @@ for (const act of [1, 2, 3, 4]) {
   ok(G().scrolls.length === g("ACT_CONN")[act], "act " + act + ": " + G().scrolls.length + " of " + g("ACT_CONN")[act] + " connections");
   console.log("act " + act + " complete: " + G().scrolls.length + " connections, day " + G().day);
 }
+
+// --- built dictionaries: everything shown above must translate ----
+const built = fs.existsSync(path.join(root, "lang")) ? fs.readdirSync(path.join(root, "lang")).map(f => f.replace(".js", "")) : [];
+for (const code of built) {
+  loadLang(code);
+  I18N.set(code);
+  const missing = new Set();
+  let changed = 0;
+  for (const s of shown) { const r = I18N.translate(s); r.misses.forEach(m => missing.add(m)); if (r.out !== s) changed++; }
+  if (missing.size) console.log(code + " has no translation for " + missing.size + " pieces, e.g. " + [...missing].slice(0, 6).map(m => JSON.stringify(m.slice(0, 50))).join(", "));
+  ok(changed > shown.size * 0.9, code + ": only " + changed + " of " + shown.size + " strings changed");
+  ok(missing.size <= 15, code + ": " + missing.size + " untranslated pieces");
+}
+I18N.set("en");
+console.log("dictionaries checked: " + (built.join(" ") || "none built") + " (" + shown.size + " strings each)");
 
 console.log("smoke test passed: " + checks + " checks");
 process.exit(0);

@@ -29,8 +29,11 @@ To host it for free with GitHub Pages: **Settings → Pages → Deploy from bran
   as faint spurs, and labels that never overlap.
 - **21 languages.** Bengali, Indonesian and Vietnamese join the list. The codex, journal,
   Hall of Records, pop-up messages and map labels now switch language with everything else.
-  Interface words are hand-translated and work in every browser. Story text uses the
-  browser's built-in translator (Chrome and Edge on desktop) and stays English elsewhere.
+  Interface words are hand-translated. Story text, dialogue and menus come from
+  dictionaries in `lang/`, built ahead of time by `node tools/translate.js`, so they work
+  in every browser and on phones. The translation is machine-made (Chrome's on-device
+  translator) for 18 languages; Persian and Urdu have interface words only. Re-run the
+  tool after editing any story text.
 
 ## The Hidden Sages (v5.0)
 
@@ -159,7 +162,8 @@ there are zero image assets. The whole game is a handful of small files:
 ```
 index.html      shell & layout
 style.css       pixel-era styling
-js/i18n.js      21 interface languages + story translation via the browser
+js/i18n.js      21 interface languages + the story dictionary loader
+lang/*.js       one story dictionary per language, built by tools/translate.js
 js/data.js      Act I — cities, dialogues, events, quizzes
 js/data2.js     Act II — the River of Time: 12 era-stops, 27 thinkers
 js/data3.js     Act III — the Mother Road: 9 stops, 13 thinkers (4 hidden), the cheats
@@ -168,6 +172,8 @@ js/sprites.js   procedural pixel art renderer
 js/audio.js     sound effects + generative music engine (WebAudio)
 js/game.js      state machine, acts, modes, the Whisper stone & game loop
 test/smoke.js   headless test: checks the mechanics, plays ALL FOUR acts end to end (node test/smoke.js)
+test/harness.js loads the game into Node for the test and the tools
+tools/translate.js     harvests every string the game shows and builds lang/*.js
 tools/cheat-sheet.js   builds a private, git-ignored page of every Whisper stone word
 ```
 
