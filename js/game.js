@@ -31,6 +31,7 @@ let frame = 0;
 let travelTimer = 0;
 const DAY_MS = 1400;   // real ms per in-game travel day
 let lastTime = 0;
+let hiRes = false;     // true while the canvas is in 3x map mode
 let currentEvent = null;
 let dialogue = null;   // { phil, nodeIndex, phase: "ask"|"reply", reply }
 
@@ -96,6 +97,10 @@ function newGame(diffKey, act) {
     dayLimit: 0,
     quizCorrect: 0,
     scrolls: [],
+    cargo: [0, 0, 0, 0],
+    cargoCost: [0, 0, 0, 0],
+    tradeProfit: 0,
+    tradeSeed: Math.floor(Math.random() * 1e6) + 1,
     met: {},
     soldAt: {},
     askedQuiz: {},
@@ -204,6 +209,51 @@ function processWhisper(raw) {
   return cheat.msg;
 }
 
+// --- the rumor log: passwords heard in dialogue, kept across journeys ---
+// A password given in Act II can open a door in Act III, so rumors live
+// in their own store, not in the per-journey save.
+
+const RUMOR_KEY = "silk_road_rumors";
+const rumorMem = {};
+const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
+
+function rumors() { return Object.assign(rumorMem, loadStore(RUMOR_KEY)); }
+
+function secretCity(pid) {
+  return Object.keys(CITY_BY_ID).map(id => CITY_BY_ID[id]).find(c => c.philosophers.includes(pid));
+}
+function actOfCity(id) {
+  return [CITIES, ACT2_CITIES, ACT3_CITIES, ACT4_CITIES].findIndex(l => l.some(c => c.id === id)) + 1;
+}
+
+function noteRumors(text) {
+  const low = String(text || "").toLowerCase();
+  const known = rumors();
+  Object.keys(PHILOSOPHERS).forEach(pid => {
+    const p = PHILOSOPHERS[pid];
+    if (!p.secret || known[pid] || !low.includes(p.password)) return;
+    known[pid] = true;
+    saveStore(RUMOR_KEY, known);
+    if (G) journal("Heard words meant for a hidden teacher in " + secretCity(pid).name + ". Noted them under Rumors.");
+    // the words themselves stay out of the toast: toasts get translated, passwords must not be
+    showToast("✎ Rumor noted in your Journal: words for a hidden teacher");
+  });
+}
+
+function rumorsHTML() {
+  const known = rumors();
+  const ids = Object.keys(known).filter(id => PHILOSOPHERS[id] && PHILOSOPHERS[id].secret);
+  if (!ids.length) return "";
+  return '<div class="codex-entry"><h3>Rumors: words for hidden teachers</h3>' + ids.map(id => {
+    const c = secretCity(id);
+    const state = G && G.met[id] ? "Teacher met on this journey." :
+      G && G.secrets[id] ? "Door open on this journey." : "Not yet spoken on this journey.";
+    return '<p><b class="notranslate">“' + PHILOSOPHERS[id].password + '”</b> <span>Speak them in ' +
+      c.name + " (Act " + ROMAN[actOfCity(c.id)] + "). " + state + "</span></p>";
+  }).join("") +
+  '<div class="route">Type the words into the Whisper stone exactly as written here, or pick them from the city menu when you arrive.</div></div>';
+}
+
 function toggleWhisper() {
   const w = document.getElementById("whisper");
   const inp = document.getElementById("whisper-input");
@@ -238,6 +288,7 @@ function showToast(text) {
 // --- helpers -------------------------------------------------
 
 function setText(t) { ui.text.textContent = t; }
+function setHTML(html) { ui.text.innerHTML = html; } // i18n.js wraps this, like setText
 function setSpeaker(name) {
   if (name) { ui.speaker.textContent = name; ui.speaker.classList.remove("hidden"); }
   else ui.speaker.classList.add("hidden");
@@ -282,6 +333,7 @@ function applyEffect(e) {
   G.silver = Math.max(0, G.silver + (e.silver || 0));
   G.health = Math.min(100, G.health + (e.health || 0));
   G.camels = Math.max(0, G.camels + (e.camels || 0));
+  if (e.camels < 0) trimCargo();
   G.insight += e.insight || 0;
   G.day += e.days || 0;
   updateStats();
@@ -310,7 +362,8 @@ function showTitle() {
       // older saves may predate difficulty settings, branching routes, acts and secrets
       G = Object.assign({ eventChance: 0.22, priceMul: 1, askedQuiz: {}, act: 1,
                           route: DEFAULT_ROUTE.slice(), legOverrides: {},
-                          secrets: {}, cheated: false }, save);
+                          secrets: {}, cheated: false, cargo: [0, 0, 0, 0],
+                          cargoCost: [0, 0, 0, 0], tradeProfit: 0, tradeSeed: 1 }, save);
       if (G.legDist > 0) { updateStats(); pauseTravel(); }
       else arriveAtCity(false);
     });
@@ -401,7 +454,11 @@ function showHelp() {
     "Dialogues earn INSIGHT, and completing one earns a SCROLL: a Connection for your Codex " +
     "showing how that tradition links to the others.\n\n" +
     "GOAL  Reach Rome alive with as much insight and as many connections as you can. " +
-    "The Codex of Connections (button below) is yours to read at any time — it is the real treasure."
+    "The Codex of Connections (button below) is yours to read at any time — it is the real treasure.\n\n" +
+    "SUPPLIES  Every road out of a city shows how many days it takes and whether your food and water will last.\n\n" +
+    "TRADE  Each market has a traders' row. Buy the good a city makes, carry it on, and sell it where it is wanted. " +
+    "Each animal carries " + BALES_PER_BEAST + " bales.\n\n" +
+    "RUMORS  Some teachers are hidden. When another philosopher gives away their words, the Journal notes them for you."
   );
   clearChoices();
   addChoice("⟵  Back", showTitle);
@@ -436,7 +493,13 @@ function cityMenu() {
   let hiddenHere = false;
   c.philosophers.forEach(pid => {
     const p = PHILOSOPHERS[pid];
-    if (p.secret && !G.secrets[pid]) { hiddenHere = true; return; }
+    if (p.secret && !G.secrets[pid]) {
+      if (rumors()[pid]) {
+        addChoice("✧  Speak the words you heard: “" + p.password + "”",
+          () => showToast(processWhisper(p.password)));
+      } else hiddenHere = true;
+      return;
+    }
     const met = G.met[pid];
     addChoice((met ? "✓ " : (p.secret ? "✧ " : "☆ ")) + (met ? "Visit again: " : "Seek out ") + p.name + " — " + p.title,
       () => startDialogue(pid));
@@ -457,19 +520,55 @@ function cityMenu() {
   if (c.id === A.end) {
     if (G.met[A.finale]) addChoice("★  Conclude your journey", showVictory);
   } else if (det) {
-    addChoice("⟶  Set out for " + nextCity().name + "  (" + c.distToNext + " km of " + c.terrainToNext + ")",
-      startTravel);
-    addChoice(det.label, () => {
+    const main = { dist: c.distToNext, terrain: c.terrainToNext };
+    addChoice("⟶  Set out for " + nextCity().name + "  (" + main.dist + " km of " + main.terrain + " · " + forecastTag(main) + ")",
+      () => setOut(main, startTravel));
+    addChoice(det.label + "  [" + forecastTag(det.leg) + "]", () => setOut(det.leg, () => {
       G.route.splice(G.cityIndex + 1, 0, det.via);
       G.legOverrides[G.cityIndex] = det.leg;
       journal(det.journal);
       startTravel();
-    });
+    }));
   } else {
     const leg = currentLeg();
-    addChoice("⟶  Set out for " + nextCity().name + "  (" + leg.dist + " km of " + leg.terrain + ")",
-      startTravel);
+    addChoice("⟶  Set out for " + nextCity().name + "  (" + leg.dist + " km of " + leg.terrain + " · " + forecastTag(leg) + ")",
+      () => setOut(leg, startTravel));
   }
+}
+
+// --- supply forecast -------------------------------------------
+// The last day's ration is eaten before the gates, so a leg needs one
+// more than its day count to arrive without the starvation penalty.
+
+function daySpeed(terrain) {
+  const pace = PACES[G.pace] || PACES.steady;
+  return Math.round((150 + Math.min(G.camels, 4) * 20 + (terrain === "sea" ? 120 : 0)) * pace.speedMul);
+}
+
+function forecast(dist, terrain) {
+  const days = Math.max(1, Math.ceil(dist / daySpeed(terrain)));
+  return { days, food: days + 1, water: terrain === "sea" ? 0 : days * (terrain === "desert" ? 2 : 1) + 1 };
+}
+
+function forecastTag(leg) {
+  const f = forecast(leg.dist, leg.terrain);
+  return "about " + f.days + " days · food " + (G.food >= f.food ? "✓" : "✗") +
+    (f.water ? " · water " + (G.water >= f.water ? "✓" : "✗") : "");
+}
+
+function setOut(leg, go) {
+  const f = forecast(leg.dist, leg.terrain);
+  if (G.food >= f.food && G.water >= f.water) return go();
+  const line = (what, have, need) => what + ": you carry " + have + ", the road needs " + need +
+    (have < need ? ". You are " + (need - have) + " short." : ".");
+  setSpeaker("THE CARAVAN MASTER COUNTS YOUR STORES");
+  setText("This road is about " + f.days + " days at your " + G.pace + " pace.\n\n" +
+    line("Food", G.food, f.food) + (f.water ? "\n" + line("Water", G.water, f.water) : "") +
+    "\n\nRoad events can cost extra days. An empty pack drains your health every day you walk.");
+  clearChoices();
+  addChoice("⚖  Visit the market first", showMarket);
+  addChoice("⟶  Set out anyway", go);
+  addChoice("⟵  Back to the city", cityMenu);
 }
 
 // --- DIALOGUE ------------------------------------------------
@@ -496,6 +595,7 @@ function renderDialogue() {
   if (d.phase === "ask") {
     const node = p.nodes[d.nodeIndex];
     setText(node.text);
+    noteRumors(node.text);
     node.choices.forEach(ch => {
       addChoice("» " + ch.label, () => {
         G.insight += ch.insight;
@@ -507,6 +607,7 @@ function renderDialogue() {
     });
   } else {
     setText(d.reply);
+    noteRumors(d.reply);
     addChoice("…  Continue", () => {
       d.nodeIndex++;
       if (d.nodeIndex < p.nodes.length) {
@@ -540,6 +641,7 @@ function finishDialogue() {
   sfx.scroll();
   setSpeaker("✦ CONNECTION RECORDED IN YOUR CODEX ✦");
   setText("「 " + p.connection.title + " 」\n\n" + p.connection.text);
+  noteRumors(p.connection.text);
   clearChoices();
   if (city().id === currentAct().end && dialogue.pid === currentAct().finale) {
     addChoice("★  Conclude your journey", showVictory);
@@ -604,10 +706,93 @@ function marketMenu() {
       marketSay("Scribes copy your scroll by lamplight. Your silver grows — and so does the idea, now loose in another city. This is how wisdom traveled: one paid copy at a time.");
     });
   if (!canSell) b.disabled = true;
+  addChoice("⚖  Traders' row: buy and sell goods  (cargo " + cargoCount() + " of " + cargoCap() + " bales)", () => showTrade());
   addChoice("⟵  Leave the market", cityMenu);
 }
 
 function marketSay(t) { setText(t); marketMenu(); }
+
+// --- TRADE GOODS -----------------------------------------------
+// Every city makes one good cheaply and wants another. What a city
+// makes is wanted two stops on, so cargo has to survive two legs.
+// One price per good per city: no profit from buying and selling in place.
+
+const GOODS = {
+  1: ["Silk", "Jade", "Spice", "Glass"],
+  2: ["Paper", "Spice", "Coffee", "Clockwork"],
+  3: ["Gold dust", "Salt", "Cloth", "Incense"],
+  4: ["Cacao", "Obsidian", "Feathers", "Fine cloth"]
+};
+const GOOD_BASE = [20, 16, 12, 24];
+const BALES_PER_BEAST = 2;
+ACHIEVEMENTS.push({ id: "merchant_prince", name: "Merchant Prince", desc: "Earn 150 silver of trade profit in one journey." });
+
+function cargoCount() { return (G.cargo || []).reduce((s, n) => s + n, 0); }
+function cargoCap() { return G.camels * BALES_PER_BEAST; }
+
+function goodPrice(gi, idx) {
+  const mul = gi === idx % 4 ? 0.7 : gi === (idx + 2) % 4 ? 1.5 : 1;
+  const noise = 0.9 + srand(((G.tradeSeed || 1) + idx * 31 + gi * 7) * 2654435761)() * 0.2;
+  return Math.max(1, Math.round(GOOD_BASE[gi] * mul * noise * (1 + idx * 0.03)));
+}
+
+// Fewer animals than cargo: the largest holding is left by the road first.
+function trimCargo() {
+  if (!G.cargo) return;
+  let lost = 0;
+  while (cargoCount() > cargoCap()) {
+    const gi = G.cargo.indexOf(Math.max.apply(null, G.cargo));
+    G.cargoCost[gi] -= G.cargoCost[gi] / G.cargo[gi];
+    G.cargo[gi]--;
+    lost++;
+  }
+  if (lost) {
+    journal("Too few animals for the cargo. Left " + lost + " bales by the road.");
+    showToast("⚠ Too few animals: " + lost + " bales left by the road");
+  }
+}
+
+function showTrade(msg) {
+  mode = "MARKET";
+  const idx = G.cityIndex, names = GOODS[actNum()];
+  const cheap = idx % 4, crave = (idx + 2) % 4;
+  const ahead = CITY_BY_ID[G.route[idx + 2]];
+  setSpeaker("THE TRADERS' ROW OF " + city().name.toUpperCase());
+  setText((msg ? msg + "\n\n" : "") +
+    "Cargo: " + cargoCount() + " of " + cargoCap() + " bales  (" + BALES_PER_BEAST + " per animal).   Silver: " + G.silver + "\n" +
+    names.map((n, gi) => n + " " + goodPrice(gi, idx) +
+      (gi === cheap ? " ▼ made here" : gi === crave ? " ▲ wanted here" : "")).join("   ·   ") +
+    "\n\nThe trader's rule: buy what a city makes, sell it where it is wanted." +
+    (ahead ? " Caravan talk says " + ahead.name + " pays well for " + names[cheap].toLowerCase() + "." : ""));
+  clearChoices();
+  names.forEach((n, gi) => {
+    const p = goodPrice(gi, idx);
+    addChoice("Buy 1 bale of " + n.toLowerCase() + " — " + p + " silver", () => {
+      if (G.silver < p) return showTrade("Not enough silver.");
+      if (cargoCount() >= cargoCap()) return showTrade("Your animals can carry no more. Buy another beast, or sell something first.");
+      G.cargo[gi]++;
+      G.cargoCost[gi] += p;
+      applyEffect({ silver: -p });
+      showTrade("One bale of " + n.toLowerCase() + ", roped and loaded.");
+    });
+  });
+  names.forEach((n, gi) => {
+    if (!G.cargo[gi]) return;
+    const p = goodPrice(gi, idx);
+    addChoice("Sell 1 bale of " + n.toLowerCase() + "  (you hold " + G.cargo[gi] + ") — " + p + " silver", () => {
+      const cost = G.cargoCost[gi] / G.cargo[gi];
+      G.cargo[gi]--;
+      G.cargoCost[gi] -= cost;
+      G.tradeProfit = (G.tradeProfit || 0) + p - cost;
+      if (G.tradeProfit >= 150) unlockAch("merchant_prince");
+      sfx.coin();
+      applyEffect({ silver: p });
+      showTrade("Sold. " + (p > cost ? "A profit of " + Math.round(p - cost) + " silver on that bale." :
+        "No profit on that bale. The road teaches prices too."));
+    });
+  });
+  addChoice("⟵  Back to the market", showMarket);
+}
 
 // --- TRAVEL --------------------------------------------------
 
@@ -635,13 +820,21 @@ function travelChoices() {
     travelText();
     travelChoices();
   });
+  addChoice("»  Speed: " + travelSpeed + "×  (tap to change)", () => {
+    travelSpeed = SPEEDS[(SPEEDS.indexOf(travelSpeed) + 1) % SPEEDS.length];
+    travelChoices();
+  });
 }
+
+const SPEEDS = [1, 2, 4];
+let travelSpeed = 1; // fast-forward: divides the real time per travel day
 
 function travelText(extra) {
   const c = city(), n = nextCity(), leg = currentLeg();
   const remaining = Math.max(0, leg.dist - Math.floor(G.legDist));
   setText("On the road: " + c.name + "  ⟶  " + n.name +
-    "\nTerrain: " + leg.terrain + "   ·   " + remaining + " km remaining   ·   pace: " + G.pace +
+    "\nTerrain: " + leg.terrain + "   ·   " + remaining + " km remaining   ·   about " +
+    Math.ceil(remaining / daySpeed(leg.terrain)) + " days   ·   pace: " + G.pace +
     (extra ? "\n\n" + extra : ""));
 }
 
@@ -660,8 +853,7 @@ function pauseTravel() {
 function travelDayTick() {
   const leg = currentLeg();
   const pace = PACES[G.pace] || PACES.steady;
-  const speed = Math.round((150 + Math.min(G.camels, 4) * 20 + (leg.terrain === "sea" ? 120 : 0)) * pace.speedMul);
-  G.legDist += speed;
+  G.legDist += daySpeed(leg.terrain);
   G.day += 1;
   G.health = Math.min(100, G.health + pace.health);
   G.food = Math.max(0, G.food - 1);
@@ -786,10 +978,10 @@ function showCodex() {
   if (!G || G.scrolls.length === 0) {
     setText("The codex is empty. Seek out the philosophers in each city — every completed dialogue records a thread of connection between the world's traditions.");
   } else {
-    ui.text.innerHTML = G.scrolls.map(s =>
+    setHTML(G.scrolls.map(s =>
       '<div class="codex-entry"><h3>' + s.title + '</h3><p>' + s.text +
       '</p><div class="route">thread: ' + s.route + '</div></div>'
-    ).join("");
+    ).join(""));
   }
   clearChoices();
   addChoice("⟵  Close codex", closeOverlay);
@@ -798,7 +990,8 @@ function showCodex() {
 function showMap() {
   if (!enterOverlay("MAP")) return;
   setSpeaker("THE ROAD SO FAR");
-  setText(G ? "From Chang'an to Rome is more than ten thousand li. Every dot is a world; every line between them is a conversation."
+  setText(G ? (actNum() === 1 ? "From Chang'an to Rome is more than ten thousand li. " : "") +
+              "Every dot is a world; every line between them is a conversation."
             : "Begin the journey to chart your road.");
   clearChoices();
   addChoice("⟵  Close map", closeOverlay);
@@ -808,11 +1001,12 @@ function showJournal() {
   if (!enterOverlay("JOURNAL")) return;
   setSpeaker("YOUR TRAVEL JOURNAL");
   const entries = G && G.journal ? G.journal : [];
-  if (!entries.length) {
+  const heard = rumorsHTML();
+  if (!entries.length && !heard) {
     setText("The journal is blank. The road will fill it.");
   } else {
-    ui.text.innerHTML = entries.slice().reverse().map(e =>
-      '<div class="codex-entry"><p>' + e + '</p></div>').join("");
+    setHTML(heard + entries.slice().reverse().map(e =>
+      '<div class="codex-entry"><p>' + e + '</p></div>').join(""));
   }
   clearChoices();
   addChoice("⟵  Close journal", closeOverlay);
@@ -1043,7 +1237,7 @@ function showRecords() {
       "<p>" + (ach[a.id] ? "✦ " : "· ") + "<b>" + a.name + "</b> — " +
       (ach[a.id] ? a.desc : "<span style='opacity:.6'>" + a.desc + "</span>") + "</p>").join("") +
     "</div>";
-  ui.text.innerHTML = html;
+  setHTML(html);
   clearChoices();
   addChoice("⟵  Back to the title", showTitle);
 }
@@ -1057,13 +1251,23 @@ function render(t) {
 
   if (mode === "TRAVEL") {
     travelTimer += dt;
-    while (travelTimer >= DAY_MS && mode === "TRAVEL") {
-      travelTimer -= DAY_MS;
+    while (travelTimer >= DAY_MS / travelSpeed && mode === "TRAVEL") {
+      travelTimer -= DAY_MS / travelSpeed;
       travelDayTick();
     }
   }
   updateMusic(mode);
 
+  // The map is the one scene that is mostly text, so it alone renders at
+  // 3x with smoothing on. Everything else keeps the chunky 320x180 look.
+  const hi = mode === "MAP";
+  if (hi !== hiRes) {
+    hiRes = hi;
+    canvas.width = hi ? 960 : 320;
+    canvas.height = hi ? 540 : 180;
+    canvas.classList.toggle("smooth", hi);
+  }
+  ctx.setTransform(hi ? 3 : 1, 0, 0, hi ? 3 : 1, 0, 0);
   ctx.clearRect(0, 0, 320, 180);
   const animFrame = Math.floor(frame / 9);
 
@@ -1086,9 +1290,7 @@ function render(t) {
     case "RECORDS": {
       drawSkyGradient(ctx, SKY.night);
       drawStars(ctx, 61);
-      ctx.fillStyle = "#e2b94c";
-      ctx.font = "12px monospace";
-      ctx.fillText("✧ the hall of records ✧", 96, 90);
+      drawCaption(ctx, "✧ " + TX("the hall of records") + " ✧", 90, "12px monospace", "#e2b94c");
       break;
     }
     case "TRAVEL": case "CAMP": case "EVENT": {
@@ -1102,15 +1304,14 @@ function render(t) {
       const A = currentAct();
       const fracDone = G && currentLeg().dist ? Math.min(1, G.legDist / currentLeg().dist) : 0;
       drawMapScene(ctx, G ? G.route : DEFAULT_ROUTE, G ? G.cityIndex : 0, fracDone,
-        A.points, A.cities, A.mapTitle);
+        A.points, A.cities, A.mapTitle, A.detours, frame);
       break;
     }
     case "CODEX": case "JOURNAL": {
       drawSkyGradient(ctx, SKY.night);
       drawStars(ctx, 31);
-      ctx.fillStyle = "#e2b94c";
-      ctx.font = "12px monospace";
-      ctx.fillText(mode === "CODEX" ? "✦ the codex of connections ✦" : "✎ the travel journal ✎", 80, 90);
+      drawCaption(ctx, mode === "CODEX" ? "✦ " + TX("the codex of connections") + " ✦"
+                                        : "✎ " + TX("the travel journal") + " ✎", 90, "12px monospace", "#e2b94c");
       break;
     }
     case "VICTORY":
@@ -1131,7 +1332,8 @@ document.getElementById("btn-codex").onclick = showCodex;
 document.getElementById("btn-map").onclick = showMap;
 document.getElementById("btn-journal").onclick = showJournal;
 document.getElementById("btn-sound").onclick = function () {
-  this.textContent = toggleSound();
+  toggleSound();
+  this.textContent = soundLabel();
 };
 document.getElementById("btn-whisper").onclick = toggleWhisper;
 document.getElementById("whisper-go").onclick = submitWhisper;

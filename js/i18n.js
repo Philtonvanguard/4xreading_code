@@ -188,8 +188,68 @@ var I18N = (function () {
       whisperPh: "fluister een woord in de steen…",
       tagline: "de reis van een filosoof · ca. 100 v.Chr.",
       transLoading: "verhaalvertaling wordt voorbereid…",
-      transOff: "het verhaal blijft Engels in deze browser" } }
+      transOff: "het verhaal blijft Engels in deze browser" } },
+    bn: { name: "বাংলা", rtl: false, d: {
+      day: "দিন", food: "খাবার", water: "পানি", silver: "রুপা", health: "স্বাস্থ্য",
+      camels: "উট", horses: "ঘোড়া", oxen: "বলদ", llamas: "লামা",
+      insight: "অন্তর্দৃষ্টি", scrolls: "পুঁথি", codex: "কোডেক্স", map: "মানচিত্র",
+      journal: "দিনলিপি", whisper: "ফিসফিস", language: "ভাষা",
+      hint: "কী: 1–9 বাছাই · C/M/J প্যানেল",
+      whisperPh: "পাথরে একটি শব্দ ফিসফিস করুন…",
+      tagline: "এক দার্শনিকের যাত্রা · আনুমানিক খ্রিস্টপূর্ব ১০০",
+      transLoading: "গল্পের অনুবাদ প্রস্তুত হচ্ছে…",
+      transOff: "এই ব্রাউজারে গল্প ইংরেজিতেই থাকবে" } },
+    id: { name: "Bahasa Indonesia", rtl: false, d: {
+      day: "Hari", food: "Makanan", water: "Air", silver: "Perak", health: "Kesehatan",
+      camels: "Unta", horses: "Kuda", oxen: "Lembu", llamas: "Llama",
+      insight: "Wawasan", scrolls: "Gulungan", codex: "Kodeks", map: "Peta",
+      journal: "Jurnal", whisper: "Bisikan", language: "Bahasa",
+      hint: "tombol: 1–9 pilih · panel C/M/J",
+      whisperPh: "bisikkan sebuah kata ke batu…",
+      tagline: "perjalanan seorang filsuf · sekitar 100 SM",
+      transLoading: "menyiapkan terjemahan cerita…",
+      transOff: "cerita tetap berbahasa Inggris di peramban ini" } },
+    vi: { name: "Tiếng Việt", rtl: false, d: {
+      day: "Ngày", food: "Lương thực", water: "Nước", silver: "Bạc", health: "Sức khỏe",
+      camels: "Lạc đà", horses: "Ngựa", oxen: "Bò", llamas: "Lạc đà không bướu",
+      insight: "Tuệ giác", scrolls: "Cuộn sách", codex: "Thư tịch", map: "Bản đồ",
+      journal: "Nhật ký", whisper: "Thì thầm", language: "Ngôn ngữ",
+      hint: "phím: 1–9 chọn · bảng C/M/J",
+      whisperPh: "thì thầm một từ vào phiến đá…",
+      tagline: "hành trình của một triết gia · khoảng năm 100 TCN",
+      transLoading: "đang chuẩn bị bản dịch câu chuyện…",
+      transOff: "trong trình duyệt này câu chuyện vẫn bằng tiếng Anh" } }
   };
+
+  // Later chrome, one row per language: the title, then the three states
+  // of the sound button (music + effects, effects only, off).
+  var MORE = {
+    en: ["THE SILK ROAD OF IDEAS", "Sound: music+sfx", "Sound: sfx only", "Sound: off"],
+    es: ["LA RUTA DE LA SEDA DE LAS IDEAS", "Sonido: música + efectos", "Sonido: solo efectos", "Sonido: apagado"],
+    ar: ["طريق الحرير للأفكار", "الصوت: موسيقى + مؤثرات", "الصوت: مؤثرات فقط", "الصوت: متوقف"],
+    he: ["דרך המשי של הרעיונות", "קול: מוזיקה + אפקטים", "קול: אפקטים בלבד", "קול: כבוי"],
+    fr: ["LA ROUTE DE LA SOIE DES IDÉES", "Son : musique + effets", "Son : effets seuls", "Son : coupé"],
+    de: ["DIE SEIDENSTRASSE DER IDEEN", "Ton: Musik + Effekte", "Ton: nur Effekte", "Ton: aus"],
+    pt: ["A ROTA DA SEDA DAS IDEIAS", "Som: música + efeitos", "Som: só efeitos", "Som: desligado"],
+    it: ["LA VIA DELLA SETA DELLE IDEE", "Audio: musica + effetti", "Audio: solo effetti", "Audio: spento"],
+    ru: ["ШЁЛКОВЫЙ ПУТЬ ИДЕЙ", "Звук: музыка + эффекты", "Звук: только эффекты", "Звук: выкл."],
+    zh: ["思想的丝绸之路", "声音：音乐+音效", "声音：仅音效", "声音：关闭"],
+    ja: ["思想のシルクロード", "サウンド: 音楽+効果音", "サウンド: 効果音のみ", "サウンド: オフ"],
+    ko: ["사상의 실크로드", "소리: 음악+효과음", "소리: 효과음만", "소리: 끔"],
+    hi: ["विचारों का रेशम मार्ग", "ध्वनि: संगीत + प्रभाव", "ध्वनि: केवल प्रभाव", "ध्वनि: बंद"],
+    tr: ["FİKİRLERİN İPEK YOLU", "Ses: müzik + efektler", "Ses: yalnızca efektler", "Ses: kapalı"],
+    fa: ["جادهٔ ابریشم اندیشه‌ها", "صدا: موسیقی + جلوه‌ها", "صدا: فقط جلوه‌ها", "صدا: خاموش"],
+    ur: ["خیالات کی شاہراہِ ریشم", "آواز: موسیقی + اثرات", "آواز: صرف اثرات", "آواز: بند"],
+    pl: ["JEDWABNY SZLAK IDEI", "Dźwięk: muzyka + efekty", "Dźwięk: tylko efekty", "Dźwięk: wyłączony"],
+    nl: ["DE ZIJDEROUTE VAN IDEEËN", "Geluid: muziek + effecten", "Geluid: alleen effecten", "Geluid: uit"],
+    bn: ["ভাবনার রেশম পথ", "শব্দ: সঙ্গীত + ইফেক্ট", "শব্দ: শুধু ইফেক্ট", "শব্দ: বন্ধ"],
+    id: ["JALUR SUTRA GAGASAN", "Suara: musik + efek", "Suara: efek saja", "Suara: mati"],
+    vi: ["CON ĐƯỜNG TƠ LỤA CỦA TƯ TƯỞNG", "Âm thanh: nhạc + hiệu ứng", "Âm thanh: chỉ hiệu ứng", "Âm thanh: tắt"]
+  };
+  Object.keys(MORE).forEach(function (c) {
+    var m = MORE[c], d = LANGS[c].d;
+    d.title = m[0]; d.soundAll = m[1]; d.soundSfx = m[2]; d.soundOff = m[3];
+  });
 
   // BCP-47 targets where they differ from our short codes
   var API_LANG = { zh: "zh-Hans" };
@@ -263,6 +323,49 @@ var I18N = (function () {
     });
   }
 
+  // Canvas text is redrawn every frame, so it asks synchronously: the cached
+  // translation if there is one, else English now and a translation later.
+  var asked = {};
+  function tx(s) {
+    if (cur === "en" || typeof s !== "string" || !/[A-Za-z]/.test(s)) return s;
+    var target = cur, key = target + "|" + s;
+    if (cache[key]) return cache[key];
+    if (!asked[key]) {
+      asked[key] = true; // cleared on language change, so a failure is not retried every frame
+      ensureTranslator().then(function (tr) {
+        if (!tr || cur !== target) return;
+        tr.translate(s).then(function (out) { if (out) cache[key] = out; }).catch(function () {});
+      });
+    }
+    return s;
+  }
+
+  // Panels built as HTML (codex, journal, records): translate each text node
+  // in place, keeping its spacing, and leave .notranslate (passwords) alone.
+  function translateTree(root) {
+    if (!root) return;
+    delete root.dataset.orig; // the panel is no longer one plain string
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n, nodes = [];
+    while ((n = walker.nextNode())) nodes.push(n);
+    nodes.forEach(function (node) {
+      if (node.__orig === undefined) node.__orig = node.nodeValue;
+      var src = node.__orig, core = src.trim();
+      if (!/[A-Za-z]/.test(core) || (node.parentElement && node.parentElement.closest(".notranslate"))) return;
+      if (cur === "en") { node.nodeValue = src; return; }
+      var target = cur, key = target + "|" + core;
+      var put = function (out) { node.nodeValue = src.match(/^\s*/)[0] + out + src.match(/\s*$/)[0]; };
+      if (cache[key]) { put(cache[key]); return; }
+      ensureTranslator().then(function (tr) {
+        if (!tr || cur !== target) return;
+        tr.translate(core).then(function (out) {
+          if (!out) return;
+          cache[key] = out;
+          if (cur === target && node.isConnected) put(out);
+        }).catch(function () {});
+      });
+    });
+  }
+
   // Wrap the game's text helpers so every story string flows through the
   // translator. game.js declares them as classic-script globals, so
   // reassigning the global bindings also redirects internal callers.
@@ -291,6 +394,22 @@ var I18N = (function () {
         return b;
       };
     }
+
+    if (typeof setHTML === "function") {
+      var oSetHTML = setHTML;
+      setHTML = function (html) {
+        oSetHTML(html);
+        translateTree(document.getElementById("text"));
+      };
+    }
+
+    if (typeof showToast === "function") {
+      var oShowToast = showToast;
+      showToast = function (text) {
+        oShowToast(text);
+        renderTranslated(document.getElementById("toast"), text);
+      };
+    }
   }
 
   // Re-render whatever is currently on screen in the new language (or back
@@ -299,6 +418,7 @@ var I18N = (function () {
     ["text", "speaker"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el && el.dataset.orig) renderTranslated(el, el.dataset.orig);
+      else if (id === "text") translateTree(el); // an HTML panel is open
     });
     var choices = document.querySelectorAll("#choices button");
     choices.forEach(function (b) {
@@ -314,6 +434,10 @@ var I18N = (function () {
     document.documentElement.dir = lang.rtl ? "rtl" : "ltr";
     var tag = document.querySelector("#titlebar .t-dim");
     if (tag) tag.textContent = t("tagline");
+    var title = document.querySelector("#titlebar .t-gold");
+    if (title) title.textContent = t("title");
+    var snd = document.getElementById("btn-sound");
+    if (snd && typeof soundLabel === "function") snd.textContent = soundLabel();
     var codex = document.getElementById("btn-codex");
     if (codex) codex.textContent = t("codex") + " (C)";
     var map = document.getElementById("btn-map");
@@ -336,6 +460,7 @@ var I18N = (function () {
     if (!LANGS[code]) return;
     cur = code;
     translatorFailed = null; // a fresh user gesture may allow the model now
+    asked = {};
     try { localStorage.setItem(KEY, code); } catch (e) {}
     applyStatic();
     if (typeof updateStats === "function") updateStats();
@@ -396,7 +521,7 @@ var I18N = (function () {
     initPicker();
   }
 
-  return { t: t, set: set, current: function () { return cur; } };
+  return { t: t, tx: tx, set: set, current: function () { return cur; } };
 })();
 
 function T(k) { return I18N.t(k); }

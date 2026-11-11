@@ -1,6 +1,6 @@
 # The Silk Road of Ideas 🐫📜
 
-**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v5.0 — the Hidden Sages & the Uncrossed Sea: 74 philosophers, four acts)*
+**An Oregon Trail–style 2D pixel game about how the world's philosophies are all connected.** *(v5.1 — the Trader's Road: 74 philosophers, four acts, 21 languages)*
 
 The year is 100 BCE. The Han emperor's envoys have opened the roads west, and for the
 first time in history one connected route runs from **Chang'an to Rome**. You are a
@@ -13,6 +13,24 @@ other all along.
 Just open `index.html` in any modern browser — no build step, no dependencies, no install.
 
 To host it for free with GitHub Pages: **Settings → Pages → Deploy from branch → main → / (root)**.
+
+## The Trader's Road (v5.1)
+
+- **Trade goods.** Every market has a traders' row. Each city makes one good cheaply
+  and wants another. What a city makes is wanted two stops on, so cargo has to survive
+  two legs of road. Each animal carries two bales; lose an animal and its bales stay behind.
+- **Supply forecast.** Every road out of a city shows its day count and whether your
+  food and water will last. Leaving short brings a warning from the caravan master first.
+- **Rumor log.** When a philosopher gives away a hidden teacher's words, the Journal
+  notes them under Rumors, and that teacher's city offers them as a menu choice. Rumors
+  carry across journeys, since some words are given away in a different act.
+- **Fast-forward.** The Speed choice on the road cycles 1×, 2×, 4×.
+- **A cleaner map.** Sharp text, one road line (walked in red, ahead dashed), side roads
+  as faint spurs, and labels that never overlap.
+- **21 languages.** Bengali, Indonesian and Vietnamese join the list. The codex, journal,
+  Hall of Records, pop-up messages and map labels now switch language with everything else.
+  Interface words are hand-translated and work in every browser. Story text uses the
+  browser's built-in translator (Chrome and Edge on desktop) and stays English elsewhere.
 
 ## The Hidden Sages (v5.0)
 
@@ -136,11 +154,12 @@ final argument: **there was never an unconnected mind.**
 ## Tech
 
 Plain HTML5 + Canvas + vanilla JavaScript. All pixel art is drawn procedurally in code —
-there are zero image assets. The whole game is four small files:
+there are zero image assets. The whole game is a handful of small files:
 
 ```
 index.html      shell & layout
 style.css       pixel-era styling
+js/i18n.js      21 interface languages + story translation via the browser
 js/data.js      Act I — cities, dialogues, events, quizzes
 js/data2.js     Act II — the River of Time: 12 era-stops, 27 thinkers
 js/data3.js     Act III — the Mother Road: 9 stops, 13 thinkers (4 hidden), the cheats
@@ -148,7 +167,8 @@ js/data4.js     the Hidden Sages + Act IV — the Uncrossed Sea (the Americas)
 js/sprites.js   procedural pixel art renderer
 js/audio.js     sound effects + generative music engine (WebAudio)
 js/game.js      state machine, acts, modes, the Whisper stone & game loop
-test/smoke.js   headless test: plays ALL FOUR acts end to end (node test/smoke.js)
+test/smoke.js   headless test: checks the mechanics, plays ALL FOUR acts end to end (node test/smoke.js)
+tools/cheat-sheet.js   builds a private, git-ignored page of every Whisper stone word
 ```
 
 ## A note on history

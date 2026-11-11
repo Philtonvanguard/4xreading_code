@@ -162,5 +162,10 @@ function updateMusic(mode) {
 
 function toggleSound() {
   soundMode = soundMode === "full" ? "sfx" : (soundMode === "sfx" ? "off" : "full");
-  return "Sound: " + (soundMode === "full" ? "music+sfx" : (soundMode === "sfx" ? "sfx only" : "off"));
+  return soundLabel();
+}
+
+// Label for the sound button, in the player's language.
+function soundLabel() {
+  return T({ full: "soundAll", sfx: "soundSfx", off: "soundOff" }[soundMode]);
 }

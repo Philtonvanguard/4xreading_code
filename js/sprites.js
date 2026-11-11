@@ -457,53 +457,132 @@ const MAP_POINTS = {
   rome:      [38, 78]
 }; // east (Chang'an) right, west (Rome) left
 
-function drawMapScene(ctx, route, cityIndex, traveledFrac, points, citiesList, title) {
+// Canvas text in the player's language (story translator, English fallback).
+function TX(s) { return (typeof I18N !== "undefined" && I18N.tx) ? I18N.tx(s) : s; }
+
+// One centered line of canvas text.
+function drawCaption(ctx, s, y, font, color) {
+  ctx.font = font;
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.fillText(s, 160, y);
+  ctx.textAlign = "left";
+}
+
+// The route map, drawn as a clean schematic: the act's points are fitted to
+// the parchment, the road is one line (walked = solid red, ahead = dashed),
+// and each label takes the first free spot around its dot so none overlap.
+// game.js switches the canvas to 3x for this scene, so text is sharp.
+function drawMapScene(ctx, route, cityIndex, traveledFrac, points, citiesList, title, detours, frame) {
   points = points || MAP_POINTS;
   citiesList = citiesList || CITIES;
   title = title || "THE SILK ROAD  ·  CHANG'AN TO ROME";
-  drawSkyGradient(ctx, SKY.night);
-  drawStars(ctx, 5);
-  px(ctx, 0, 0, 320, 180, "rgba(20,16,10,0.6)");
-  px(ctx, 10, 20, 300, 145, "#d9c8a0"); // parchment
-  px(ctx, 12, 22, 296, 141, "#e5d8b5");
-  ctx.fillStyle = "#8a7350";
-  ctx.font = "10px monospace";
-  ctx.fillText(title, Math.max(20, Math.round((320 - title.length * 6) / 2)), 36);
+  const INK = "#5a4a30", RED = "#a03020", FAINT = "#b3a37e", PAPER = "#efe3c2";
 
-  // route line along the chosen route
-  for (let i = 0; i < route.length - 1; i++) {
-    const [x1, y1] = points[route[i]], [x2, y2] = points[route[i + 1]];
-    const steps = 14;
-    const done = i < cityIndex;
-    const partial = i === cityIndex ? traveledFrac : 0;
-    for (let st = 0; st < steps; st++) {
-      const f = st / steps;
-      const cx = Math.round(x1 + (x2 - x1) * f);
-      const cy = Math.round(y1 + (y2 - y1) * f) + 60;
-      const lit = done || f < partial;
-      px(ctx, cx, cy, 2, 2, lit ? "#a03020" : "#b0a080");
+  px(ctx, 0, 0, 320, 180, "#14100c");
+  px(ctx, 6, 6, 308, 168, "#b89f6a");
+  px(ctx, 8, 8, 304, 164, PAPER);
+  drawCaption(ctx, TX(title), 22, "bold 8px monospace", INK);
+  px(ctx, 110, 27, 100, 1, FAINT);
+
+  // fit the act's points into the map box
+  const xs = citiesList.map(c => points[c.id][0]), ys = citiesList.map(c => points[c.id][1]);
+  const x0 = Math.min.apply(null, xs), xr = (Math.max.apply(null, xs) - x0) || 1;
+  const y0 = Math.min.apply(null, ys), yr = (Math.max.apply(null, ys) - y0) || 1;
+  const P = id => [44 + (points[id][0] - x0) / xr * 232, 62 + (points[id][1] - y0) / yr * 66];
+
+  const roadBits = []; // sample points along every drawn line, so labels can keep off the road
+  const seg = (a, b, color, dash, f0, f1) => {
+    const A = P(a), B = P(b);
+    if (f0 === 0) for (let k = 1, n = Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1]) / 3); k < n; k++) {
+      roadBits.push({ x: A[0] + (B[0] - A[0]) * k / n - 1, y: A[1] + (B[1] - A[1]) * k / n - 1, w: 2, h: 2 });
     }
-  }
-  // every city of the act appears; off-route ones are faint
-  ctx.font = "8px monospace";
-  citiesList.forEach((c, ci) => {
-    const [mx, my] = points[c.id];
-    const ri = route.indexOf(c.id);
-    const onRoute = ri >= 0;
-    const visited = onRoute && ri <= cityIndex;
-    const col = visited ? "#a03020" : (onRoute ? "#6b5a3a" : "#b8a988");
-    px(ctx, mx - 2, my + 58, 5, 5, col);
-    ctx.fillStyle = ri === cityIndex ? "#a03020" : col;
-    const yOff = c.optional ? 72 : ((ci % 2) ? 72 : 52);
-    ctx.fillText(c.name, Math.min(Math.max(2, mx - 14), 250), my + yOff);
+    ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(A[0] + (B[0] - A[0]) * f0, A[1] + (B[1] - A[1]) * f0);
+    ctx.lineTo(A[0] + (B[0] - A[0]) * f1, A[1] + (B[1] - A[1]) * f1);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
+
+  // side roads not taken: faint dotted spurs
+  (detours || []).forEach(d => {
+    if (route.includes(d.via) || !route.includes(d.from)) return;
+    seg(d.from, d.via, FAINT, [1, 2], 0, 1);
+    const after = route[route.indexOf(d.from) + 1];
+    if (after) seg(d.via, after, FAINT, [1, 2], 0, 1);
   });
-  // traveler marker
+  // the road itself
+  for (let i = 0; i < route.length - 1; i++) {
+    const walked = i < cityIndex ? 1 : i === cityIndex ? traveledFrac : 0;
+    if (walked > 0) seg(route[i], route[i + 1], RED, [], 0, walked);
+    if (walked < 1) seg(route[i], route[i + 1], "#8a7a5c", [3, 2], walked, 1);
+  }
+
+  // dots
+  citiesList.forEach(c => {
+    const p = P(c.id), ri = route.indexOf(c.id);
+    const here = ri === cityIndex && traveledFrac === 0;
+    ctx.beginPath(); ctx.arc(p[0], p[1], here ? 3.2 : 2.4, 0, Math.PI * 2);
+    ctx.fillStyle = ri >= 0 && ri <= cityIndex ? RED : PAPER; ctx.fill();
+    ctx.strokeStyle = ri < 0 ? FAINT : ri <= cityIndex ? RED : INK; ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  // labels: name, with the year or era (if any) on a smaller second line
+  const hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const blocks = citiesList.map(c => { const p = P(c.id); return { x: p[0] - 4, y: p[1] - 4, w: 8, h: 8 }; });
+  const placed = [];
+  citiesList.slice().sort((a, b) => P(a.id)[0] - P(b.id)[0]).forEach(c => {
+    const p = P(c.id), ri = route.indexOf(c.id);
+    const parts = c.name.split(", ").map(TX);
+    ctx.font = "bold 6px monospace";
+    let w = ctx.measureText(parts[0]).width;
+    ctx.font = "5px monospace";
+    if (parts[1]) w = Math.max(w, ctx.measureText(parts[1]).width);
+    const h = parts[1] ? 13 : 7;
+    const spots = [[p[0] - w / 2, p[1] + 5], [p[0] - w / 2, p[1] - 5 - h], [p[0] + 6, p[1] - h / 2],
+      [p[0] - 6 - w, p[1] - h / 2], [p[0] - w / 2, p[1] + 16], [p[0] - w / 2, p[1] - 16 - h]];
+    let best = null;
+    spots.forEach((s, i) => {
+      const r = { x: Math.min(Math.max(s[0], 11), 309 - w), y: Math.min(Math.max(s[1], 30), 158 - h), w: w, h: h };
+      const cost = placed.filter(o => hit(r, o)).length * 100 + blocks.filter(o => hit(r, o)).length * 10 +
+        roadBits.filter(o => hit(r, o)).length * 3 + i;
+      if (!best || cost < best.cost) best = { r: r, cost: cost, far: i > 3 };
+    });
+    const r = best.r;
+    placed.push(r);
+    if (best.far) { // leader line from a far label back to its dot
+      ctx.strokeStyle = FAINT; ctx.lineWidth = 0.6; ctx.beginPath();
+      ctx.moveTo(p[0], p[1]); ctx.lineTo(r.x + w / 2, r.y < p[1] ? r.y + h : r.y); ctx.stroke();
+    }
+    ctx.textAlign = "center";
+    ctx.fillStyle = ri < 0 ? "#9a8a68" : ri <= cityIndex ? RED : INK;
+    ctx.font = "bold 6px monospace";
+    ctx.fillText(parts[0], r.x + w / 2, r.y + 6);
+    if (parts[1]) { ctx.font = "5px monospace"; ctx.fillText(parts[1], r.x + w / 2, r.y + 12); }
+    ctx.textAlign = "left";
+  });
+
+  // the traveler: a pulsing ring on the road
   const last = route.length - 1;
-  const [x1, y1] = points[route[Math.min(cityIndex, last)]];
-  const [x2, y2] = points[route[Math.min(cityIndex + 1, last)]];
-  const mx = Math.round(x1 + (x2 - x1) * traveledFrac);
-  const my = Math.round(y1 + (y2 - y1) * traveledFrac) + 60;
-  px(ctx, mx - 2, my - 6, 6, 4, "#7a5fa0");
+  const a = P(route[Math.min(cityIndex, last)]), b = P(route[Math.min(cityIndex + 1, last)]);
+  const tx = a[0] + (b[0] - a[0]) * traveledFrac, ty = a[1] + (b[1] - a[1]) * traveledFrac;
+  ctx.strokeStyle = "#7a5fa0"; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(tx, ty, 4.5 + Math.sin((frame || 0) * 0.08), 0, Math.PI * 2); ctx.stroke();
+
+  // legend
+  ctx.font = "5px monospace";
+  let lx = 14;
+  [[RED, RED, "visited"], [PAPER, INK, "ahead"], [PAPER, "#7a5fa0", "you are here"]].forEach(k => {
+    ctx.beginPath(); ctx.arc(lx + 2, 165, 2, 0, Math.PI * 2);
+    ctx.fillStyle = k[0]; ctx.fill(); ctx.strokeStyle = k[1]; ctx.lineWidth = 1; ctx.stroke();
+    const word = TX(k[2]);
+    ctx.fillStyle = INK; ctx.fillText(word, lx + 7, 167);
+    lx += 14 + ctx.measureText(word).width;
+  });
+  ctx.textAlign = "right";
+  ctx.fillText(TX("stop") + " " + (Math.min(cityIndex, last) + 1) + " / " + route.length, 306, 167);
+  ctx.textAlign = "left";
 }
 
 // --- Title screen --------------------------------------------
@@ -517,12 +596,8 @@ function drawTitleScene(ctx, frame) {
   drawCaravan(ctx, 60 + (frame % 700 > 350 ? 0 : 0), 140, Math.floor(frame / 8), 3);
   ctx.fillStyle = "rgba(20,12,4,0.35)";
   ctx.fillRect(0, 0, 320, 180);
-  ctx.fillStyle = "#e2b94c";
-  ctx.font = "bold 16px monospace";
-  ctx.fillText("THE SILK ROAD OF IDEAS", 52, 50);
-  ctx.fillStyle = "#e8d9b8";
-  ctx.font = "10px monospace";
-  ctx.fillText("a philosopher's journey · c. 100 BCE", 56, 66);
+  drawCaption(ctx, T("title"), 50, "bold 16px monospace", "#e2b94c");
+  drawCaption(ctx, T("tagline"), 66, "10px monospace", "#e8d9b8");
 }
 
 // --- Victory constellation -----------------------------------
@@ -548,7 +623,5 @@ function drawVictoryScene(ctx, scrollCount, frame) {
   }
   nodes.forEach(([x, y]) => px(ctx, x - 2, y - 2, 4, 4, "#e2b94c"));
   px(ctx, 158, 86, 5, 5, "#6cc28e");
-  ctx.fillStyle = "#e8d9b8";
-  ctx.font = "10px monospace";
-  ctx.fillText("every idea you carried now touches every other", 30, 168);
+  drawCaption(ctx, TX("every idea you carried now touches every other"), 168, "10px monospace", "#e8d9b8");
 }
